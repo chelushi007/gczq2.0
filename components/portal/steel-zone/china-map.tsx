@@ -2,10 +2,19 @@
 
 import { useMemo, type ReactNode } from "react"
 import { geoMercator, geoPath } from "d3-geo"
+// @ts-expect-error 该包无类型声明
+import rewind from "@mapbox/geojson-rewind"
 import rawGeo from "@/lib/china-geo.json"
 
-const geo = rawGeo as unknown as {
-  features: { type: string; properties: { name: string }; geometry: unknown }[]
+// 该 GeoJSON 数据源的多边形环绕方向与 d3-geo 的球面右手定则相反，
+// 未处理时每个省份都会被填充成整幅世界地图（表现为一整块蓝色）。
+// 用 geojson-rewind 以顺时针方向重排后即可正确渲染各省轮廓。
+const geo = rewind(JSON.parse(JSON.stringify(rawGeo)), true) as {
+  features: {
+    type: string
+    properties: { name: string; centroid?: [number, number]; center?: [number, number] }
+    geometry: unknown
+  }[]
 }
 
 function shortName(full: string) {
@@ -21,36 +30,90 @@ function shortName(full: string) {
 
 export type MapLegendItem = { label: string; color: string }
 
+// 画布宽度（viewBox 逻辑单位），高度按大陆纵横比自动推导
 const W = 800
-const H = 640
+
+// 中国大陆取景框（经纬度）。刻意排除南纬 18° 以下的南海诸岛，
+// 使大陆铺满板块，南海诸岛改由右下角角标单独展示。
+// d3-geo 使用球面几何，外环需顺时针缠绕，否则会被当作“整球减去该框”。
+const MAINLAND_BOX = {
+  type: "Feature" as const,
+  properties: {},
+  geometry: {
+    type: "Polygon" as const,
+    coordinates: [
+      [
+        [73.4, 17.8],
+        [73.4, 53.7],
+        [135.2, 53.7],
+        [135.2, 17.8],
+        [73.4, 17.8],
+      ],
+    ],
+  },
+}
+
+// municipalities / 港澳等小面积区域，标签做轻微偏移避免重叠
+const labelOffset: Record<string, [number, number]> = {
+  北京: [-2, -8],
+  天津: [10, 4],
+  上海: [12, 2],
+  香港: [4, 10],
+  澳门: [-12, 6],
+}
 
 export function ChinaMap({
-  values,
   hovered,
   onHover,
   tooltip,
 }: {
-  values: Record<string, number>
+  values?: Record<string, number>
   hovered: string | null
   onHover: (name: string | null) => void
   tooltip?: (name: string) => ReactNode
 }) {
-  const { features, pathFor, centroids } = useMemo(() => {
-    const projection = geoMercator().fitSize([W, H], geo as never)
+  const { H, features, pathFor, centroids } = useMemo(() => {
+    // 先按宽度撑满测出大陆取景框的自然高度，保证不拉伸变形
+    const measure = geoMercator().fitExtent(
+      [
+        [0, 0],
+        [W, 100000],
+      ],
+      MAINLAND_BOX as never,
+    )
+    const measured = geoPath(measure).bounds(MAINLAND_BOX as never) as [[number, number], [number, number]]
+    const H = Math.ceil(measured[1][1] - measured[0][1])
+
+    const projection = geoMercator()
+      .fitSize([W, H], MAINLAND_BOX as never)
+      .clipExtent([
+        [0, 0],
+        [W, H],
+      ])
     const path = geoPath(projection)
-    const features = geo.features.map((f) => ({ feature: f, name: shortName(f.properties.name) }))
-    const centroids: Record<string, [number, number]> = {}
+
+    const features = geo.features
+      .filter((f) => f.properties?.name?.trim())
+      .map((f) => ({ feature: f, name: shortName(f.properties.name) }))
+
+    const centroids: Record<string, [number, number] | null> = {}
     for (const { feature, name } of features) {
-      centroids[name] = path.centroid(feature as never) as [number, number]
+      const lonlat = feature.properties.centroid ?? feature.properties.center
+      centroids[name] = lonlat ? (projection(lonlat) as [number, number]) : null
     }
-    return { features, pathFor: (f: unknown) => path(f as never), centroids }
+    return { H, features, pathFor: (f: unknown) => path(f as never), centroids }
   }, [])
 
   const hoveredCentroid = hovered ? centroids[hovered] : null
 
   return (
     <div className="relative w-full">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="中国分布地图">
+      <svg
+        viewBox={`0 0 ${W} ${H}`}
+        className="h-auto w-full overflow-hidden"
+        role="img"
+        aria-label="中国分布地图"
+      >
         <g>
           {features.map(({ feature, name }) => {
             const isHover = hovered === name
@@ -60,7 +123,8 @@ export function ChinaMap({
                 d={pathFor(feature) ?? undefined}
                 fill={isHover ? "#7fb8f2" : "#cfe6fb"}
                 stroke="#ffffff"
-                strokeWidth={0.8}
+                strokeWidth={1.3}
+                vectorEffect="non-scaling-stroke"
                 className="cursor-pointer transition-colors duration-150"
                 onMouseEnter={() => onHover(name)}
                 onMouseLeave={() => onHover(null)}
@@ -73,16 +137,16 @@ export function ChinaMap({
           {features.map(({ name }) => {
             const c = centroids[name]
             if (!c) return null
-            const [x, y] = c
+            const [ox, oy] = labelOffset[name] ?? [0, 0]
             return (
               <text
                 key={`${name}-label`}
-                x={x}
-                y={y}
+                x={c[0] + ox}
+                y={c[1] + oy}
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill={hovered === name ? "#0f3d70" : "#5b7591"}
-                style={{ fontSize: 10, fontWeight: hovered === name ? 700 : 500 }}
+                style={{ fontSize: 11, fontWeight: hovered === name ? 700 : 500 }}
               >
                 {name}
               </text>
@@ -106,8 +170,8 @@ export function ChinaMap({
         </div>
       )}
 
-      {/* 南海诸岛 装饰角标 */}
-      <div className="absolute bottom-3 right-3 flex h-20 w-14 flex-col items-center justify-end rounded-md border border-sky-200 bg-sky-50/70 pb-1">
+      {/* 南海诸岛 角标 */}
+      <div className="absolute bottom-2 right-2 flex h-24 w-16 flex-col items-center justify-end rounded-md border border-sky-200 bg-sky-50/70 pb-1">
         <span className="text-[10px] leading-tight text-sky-700">南海诸岛</span>
       </div>
     </div>

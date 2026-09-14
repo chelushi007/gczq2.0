@@ -216,16 +216,16 @@ function NetworkPanel() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[200px_1fr_320px]">
       {/* 左：回收网点统计 */}
-      <div className="flex flex-col gap-3">
+      <div className="flex max-h-[560px] flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
           <StatCard icon={<Building2 className="size-4" />} label="回收网点" value={stats.total.toLocaleString()} />
           <StatCard icon={<MapPin className="size-4" />} label="覆盖省份" value={String(stats.provinces)} />
           <StatCard icon={<ShieldCheck className="size-4" />} label="认证回收商" value={stats.certified.toLocaleString()} />
           <StatCard icon={<TrendingUp className="size-4" />} label="本月新增" value={`+${stats.monthlyAdd}`} />
         </div>
-        <div className="flex-1 rounded-xl border border-border bg-card p-3">
+        <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-border bg-card p-3">
           <p className="mb-2 text-sm font-semibold text-foreground">网点数量 · 省份排行</p>
-          <ul className="space-y-2">
+          <ul className="flex-1 space-y-2 overflow-y-auto">
             {stats.top.map((t, i) => {
               const max = stats.top[0].count
               const isHover = hovered === t.province

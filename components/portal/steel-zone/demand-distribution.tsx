@@ -214,7 +214,7 @@ function NetworkPanel() {
   }, [hovered])
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[240px_1fr_320px]">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[200px_1fr_320px]">
       {/* 左：回收网点统计 */}
       <div className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">

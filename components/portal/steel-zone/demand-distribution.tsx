@@ -63,10 +63,8 @@ function DemandPanel() {
 
   const recos = useMemo(() => {
     const base = demandRecos.filter((r) => cat === "all" || r.category === cat)
-    const scoped = hovered ? base.filter((r) => r.province === hovered) : base
-    const list = scoped.length ? scoped : base
-    // 采购与销售混合，按类型标识
-    return list
+    // 悬停某省时严格按省联动；未悬停时展示全部（采购/销售混合）
+    return hovered ? base.filter((r) => r.province === hovered) : base
   }, [cat, hovered])
 
   return (
@@ -211,8 +209,8 @@ function NetworkPanel() {
   const stats = useMemo(() => networkStats(), [])
 
   const recoList = useMemo(() => {
-    const scoped = hovered ? recyclers.filter((r) => r.province === hovered) : recyclers
-    return scoped.length ? scoped : recyclers
+    // 悬停某省时严格按省联动；未悬停时展示全部回收商
+    return hovered ? recyclers.filter((r) => r.province === hovered) : recyclers
   }, [hovered])
 
   return (
@@ -295,8 +293,13 @@ function NetworkPanel() {
           </span>
           <span className="text-xs text-muted-foreground">共 {recoList.length} 家</span>
         </div>
-        <ul className="space-y-2">
-          {recoList.map((r) => (
+        {recoList.length === 0 ? (
+          <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">
+            该地区暂无回收商
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {recoList.map((r) => (
             <li
               key={r.id}
               className="rounded-lg border border-border bg-background p-2.5 transition-colors hover:border-primary/40"
@@ -323,10 +326,11 @@ function NetworkPanel() {
                   <Star className="size-3 fill-amber-400 text-amber-400" />
                   {r.monthlyCap}
                 </span>
-              </div>
-            </li>
-          ))}
-        </ul>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   )

@@ -53,9 +53,10 @@ function DemandPanel() {
   const [hovered, setHovered] = useState<string | null>(null)
 
   const demand = useMemo(() => provinceDemand(cat), [cat])
+  // 气泡显示各省“采购需求数量”
   const values = useMemo(() => {
     const v: Record<string, number> = {}
-    for (const [k, d] of Object.entries(demand)) v[k] = d.total
+    for (const [k, d] of Object.entries(demand)) v[k] = d.purchase
     return v
   }, [demand])
 
@@ -108,7 +109,7 @@ function DemandPanel() {
       </div>
 
       {/* 中：中国地图 */}
-      <div className="relative rounded-xl border border-border bg-card p-2">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-sky-50 via-white to-sky-100/70 p-2">
         <div className="absolute right-4 top-4 z-10">
           <span className="rounded-md border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground">
             {catName} · 全国需求分布
@@ -264,7 +265,7 @@ function NetworkPanel() {
       </div>
 
       {/* 中：中国地图 */}
-      <div className="rounded-xl border border-border bg-card p-2">
+      <div className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-sky-50 via-white to-sky-100/70 p-2">
         <ChinaMap
           values={networkBase}
           hovered={hovered}

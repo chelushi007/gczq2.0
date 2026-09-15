@@ -145,9 +145,9 @@ export const networkBase: Record<string, number> = {
 export function networkStats() {
   const total = Object.values(networkBase).reduce((s, v) => s + v, 0)
   const provinces = Object.keys(networkBase).length
+  // 返回全部省份（按网点数降序），左侧排行列表可滚动查看全部
   const top = Object.entries(networkBase)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 8)
     .map(([province, count]) => ({ province, count }))
   return {
     total,

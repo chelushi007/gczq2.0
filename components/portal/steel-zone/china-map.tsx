@@ -53,16 +53,26 @@ const MAINLAND_BOX = {
   },
 }
 
-// municipalities / 港澳等小面积区域，标签做轻微偏移避免重叠
-const labelOffset: Record<string, [number, number]> = {
-  北京: [-2, -8],
-  天津: [10, 4],
-  上海: [12, 2],
-  香港: [4, 10],
-  澳门: [-12, 6],
+// 直辖市 / 港澳等相互紧邻的小区域，气泡与标签做轻微偏移避免重叠
+const offset: Record<string, [number, number]> = {
+  北京: [-6, -12],
+  天津: [12, 6],
+  上海: [14, 4],
+  香港: [2, 12],
+  澳门: [-14, 10],
+  河北: [-8, 10],
+}
+
+// 密度配色：低值浅蓝 → 高值深蓝，与参考图一致
+const LOW = [201, 224, 255]
+const HIGH = [26, 86, 219]
+function mixColor(t: number) {
+  const c = LOW.map((x, i) => Math.round(x + (HIGH[i] - x) * t))
+  return `rgb(${c[0]}, ${c[1]}, ${c[2]})`
 }
 
 export function ChinaMap({
+  values = {},
   hovered,
   onHover,
   tooltip,
@@ -104,16 +114,30 @@ export function ChinaMap({
     return { H, features, pathFor: (f: unknown) => path(f as never), centroids }
   }, [])
 
+  // 数值范围（用于气泡半径与配色的归一化）
+  const { min, max } = useMemo(() => {
+    const vs = Object.values(values).filter((v) => typeof v === "number")
+    if (!vs.length) return { min: 0, max: 1 }
+    return { min: Math.min(...vs), max: Math.max(...vs) }
+  }, [values])
+
   const hoveredCentroid = hovered ? centroids[hovered] : null
 
   return (
     <div className="relative w-full">
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="h-auto w-full overflow-hidden"
+        className="h-auto w-full overflow-visible"
         role="img"
         aria-label="中国分布地图"
       >
+        <defs>
+          <filter id="bubbleGlow" x="-60%" y="-60%" width="220%" height="220%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#1d4ed8" floodOpacity="0.3" />
+          </filter>
+        </defs>
+
+        {/* 省界填充 */}
         <g>
           {features.map(({ feature, name }) => {
             const isHover = hovered === name
@@ -121,9 +145,9 @@ export function ChinaMap({
               <path
                 key={name}
                 d={pathFor(feature) ?? undefined}
-                fill={isHover ? "#7fb8f2" : "#cfe6fb"}
+                fill={isHover ? "#a9d1fb" : "#d6ecfe"}
                 stroke="#ffffff"
-                strokeWidth={1.3}
+                strokeWidth={1.2}
                 vectorEffect="non-scaling-stroke"
                 className="cursor-pointer transition-colors duration-150"
                 onMouseEnter={() => onHover(name)}
@@ -132,24 +156,88 @@ export function ChinaMap({
             )
           })}
         </g>
-        {/* 省份名称标注 */}
-        <g className="pointer-events-none">
+
+        {/* 数据聚合圈（密度气泡）+ 省份名称 */}
+        <g>
           {features.map(({ name }) => {
             const c = centroids[name]
             if (!c) return null
-            const [ox, oy] = labelOffset[name] ?? [0, 0]
+            const [ox, oy] = offset[name] ?? [0, 0]
+            const cx = c[0] + ox
+            const cy = c[1] + oy
+            const v = values[name]
+            const isHover = hovered === name
+
+            // 无数据的地区只标注名称
+            if (v == null) {
+              return (
+                <text
+                  key={`${name}-label`}
+                  x={cx}
+                  y={cy}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill={isHover ? "#0f3d70" : "#5b7591"}
+                  style={{ fontSize: 11, fontWeight: isHover ? 700 : 500 }}
+                  className="pointer-events-none"
+                >
+                  {name}
+                </text>
+              )
+            }
+
+            const t = max > min ? (v - min) / (max - min) : 0.5
+            const r = 10 + Math.sqrt(t) * 13
+            const rr = isHover ? r + 2 : r
+            const fill = mixColor(t)
+            const textFill = t > 0.42 ? "#ffffff" : "#1e3a8a"
+            const label = Math.round(v)
+            const digits = String(label).length
+
             return (
-              <text
-                key={`${name}-label`}
-                x={c[0] + ox}
-                y={c[1] + oy}
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill={hovered === name ? "#0f3d70" : "#5b7591"}
-                style={{ fontSize: 11, fontWeight: hovered === name ? 700 : 500 }}
+              <g
+                key={`${name}-bubble`}
+                className="cursor-pointer transition-transform duration-150"
+                onMouseEnter={() => onHover(name)}
+                onMouseLeave={() => onHover(null)}
               >
-                {name}
-              </text>
+                {/* 外发光光晕 · 体现密度 */}
+                <circle cx={cx} cy={cy} r={rr * 1.75} fill={fill} opacity={isHover ? 0.22 : 0.14} />
+                {/* 主气泡 */}
+                <circle
+                  cx={cx}
+                  cy={cy}
+                  r={rr}
+                  fill={fill}
+                  stroke="#ffffff"
+                  strokeWidth={1.6}
+                  filter="url(#bubbleGlow)"
+                />
+                {/* 数值 */}
+                <text
+                  x={cx}
+                  y={cy}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill={textFill}
+                  style={{ fontSize: digits >= 3 ? 9.5 : 12, fontWeight: 700 }}
+                  className="pointer-events-none tabular-nums"
+                >
+                  {label}
+                </text>
+                {/* 省份名称（气泡下方） */}
+                <text
+                  x={cx}
+                  y={cy + rr + 8}
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill={isHover ? "#0f3d70" : "#6b8199"}
+                  style={{ fontSize: 9, fontWeight: isHover ? 700 : 500 }}
+                  className="pointer-events-none"
+                >
+                  {name}
+                </text>
+              </g>
             )
           })}
         </g>

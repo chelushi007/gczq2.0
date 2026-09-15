@@ -150,10 +150,11 @@ export function ChinaMap({
   const hoveredCentroid = hovered ? centroids[hovered] : null
 
   return (
-    <div className="relative w-full">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        className="h-auto w-full overflow-visible"
+    <div className="w-full">
+      <div className="relative w-full">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="h-auto w-full overflow-visible"
         role="img"
         aria-label="中国分布地图"
       >
@@ -229,7 +230,7 @@ export function ChinaMap({
                 onMouseEnter={() => onHover(name)}
                 onMouseLeave={() => onHover(null)}
               >
-                {/* 外发光光晕 · 体现密度 */}
+                {/* 外发��光晕 · 体现密度 */}
                 <circle cx={cx} cy={cy} r={rr * 1.75} fill={fill} opacity={isHover ? 0.22 : 0.14} />
                 {/* 主气泡 */}
                 <circle
@@ -286,32 +287,31 @@ export function ChinaMap({
         </div>
       )}
 
-      {/* 密度色块图例（示例）*/}
-      <div className="absolute bottom-2 left-2 rounded-lg border border-sky-100 bg-white/85 px-3 py-2 shadow-sm backdrop-blur-sm">
-        <p className="mb-1.5 text-[11px] font-semibold text-slate-600">数量密度（示例）</p>
-        <div className="flex flex-col gap-1">
-          {legend.map((item) => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <span
-                className="inline-block size-3 rounded-sm ring-1 ring-inset ring-black/5"
-                style={{ backgroundColor: item.color }}
-              />
-              <span className="text-[10px] leading-none text-slate-500 tabular-nums">{item.label}</span>
-            </div>
-          ))}
-          <div className="mt-0.5 flex items-center gap-1.5">
-            <span
-              className="inline-block size-3 rounded-sm ring-1 ring-inset ring-black/5"
-              style={{ backgroundColor: NO_DATA_FILL }}
-            />
-            <span className="text-[10px] leading-none text-slate-500">暂无数据</span>
-          </div>
+        {/* 南海诸岛 角标 */}
+        <div className="absolute bottom-2 right-2 flex h-24 w-16 flex-col items-center justify-end rounded-md border border-sky-200 bg-sky-50/70 pb-1">
+          <span className="text-[10px] leading-tight text-sky-700">南海诸岛</span>
         </div>
       </div>
 
-      {/* 南海诸岛 角标 */}
-      <div className="absolute bottom-2 right-2 flex h-24 w-16 flex-col items-center justify-end rounded-md border border-sky-200 bg-sky-50/70 pb-1">
-        <span className="text-[10px] leading-tight text-sky-700">南海诸岛</span>
+      {/* 密度色块图例（示例）——置于地图下方，不遮盖地图任何模块 */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-sky-100 bg-sky-50/50 px-3 py-2">
+        <span className="text-[11px] font-semibold text-slate-600">数量密度（示例）</span>
+        {legend.map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <span
+              className="inline-block size-3 rounded-sm ring-1 ring-inset ring-black/5"
+              style={{ backgroundColor: item.color }}
+            />
+            <span className="text-[10px] leading-none text-slate-500 tabular-nums">{item.label}</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-1.5">
+          <span
+            className="inline-block size-3 rounded-sm ring-1 ring-inset ring-black/5"
+            style={{ backgroundColor: NO_DATA_FILL }}
+          />
+          <span className="text-[10px] leading-none text-slate-500">暂无数据</span>
+        </div>
       </div>
     </div>
   )

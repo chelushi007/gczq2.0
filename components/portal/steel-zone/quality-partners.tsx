@@ -11,10 +11,10 @@ import {
 } from "@/lib/steel-zone-data"
 
 /* ------------------------- 优质钢厂 ------------------------- */
-export function QualityMills() {
+export function QualityMills({ onMore }: { onMore?: () => void }) {
   return (
     <section className="mx-auto max-w-6xl px-6">
-      <SectionTitle title="优质钢厂" />
+      <SectionTitle title="优质钢厂" action={onMore && <ViewMoreLink onClick={onMore} />} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {qualityMills.map((m) => (
           <article
@@ -65,10 +65,10 @@ export function QualityMills() {
 }
 
 /* ------------------------- 优选回收网点 ------------------------- */
-export function QualityNetworks() {
+export function QualityNetworks({ onMore }: { onMore?: () => void }) {
   return (
     <section className="mx-auto max-w-6xl px-6">
-      <SectionTitle title="优选回收网点" />
+      <SectionTitle title="优选回收网点" action={onMore && <ViewMoreLink onClick={onMore} />} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {qualityNetworks.map((n) => (
           <article
@@ -118,6 +118,18 @@ export function QualityNetworks() {
         cta="申请成为网点"
       />
     </section>
+  )
+}
+
+/* 板块右上角“查看更多”文字链接 */
+function ViewMoreLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+    >
+      查看更多 <ArrowRight className="size-3" />
+    </button>
   )
 }
 

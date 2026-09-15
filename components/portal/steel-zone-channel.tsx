@@ -39,14 +39,20 @@ import { RegionCascader, type RegionSelection } from "./steel-zone/region-cascad
 import { ScrapCard } from "./steel-zone/scrap-card"
 import { SteelListPage, type ListKind } from "./steel-zone/list-page"
 import { QualityMills, QualityNetworks } from "./steel-zone/quality-partners"
+import { PartnersListPage, type PartnerKind } from "./steel-zone/partners-list-page"
 
-type View = "home" | ListKind
+type View = "home" | ListKind | PartnerKind
 const topNav: { label: string; view: View }[] = [
   { label: "首页", view: "home" },
   { label: "废钢商机", view: "opportunity" },
   { label: "废钢采购", view: "purchase" },
   { label: "废钢出售", view: "sales" },
+  { label: "优质钢厂", view: "mills" },
+  { label: "回收网点", view: "networks" },
 ]
+
+const LIST_KINDS: ListKind[] = ["opportunity", "purchase", "sales"]
+const PARTNER_KINDS: PartnerKind[] = ["mills", "networks"]
 
 export function SteelZoneChannel() {
   const [publishOpen, setPublishOpen] = useState(false)
@@ -94,8 +100,10 @@ export function SteelZoneChannel() {
         </button>
       </header>
 
-      {view !== "home" ? (
-        <SteelListPage kind={view} onBack={() => go("home")} />
+      {LIST_KINDS.includes(view as ListKind) ? (
+        <SteelListPage kind={view as ListKind} onBack={() => go("home")} />
+      ) : PARTNER_KINDS.includes(view as PartnerKind) ? (
+        <PartnersListPage kind={view as PartnerKind} onBack={() => go("home")} />
       ) : (
         <>
       {/* 1. Banner 轮播 */}
@@ -174,10 +182,10 @@ export function SteelZoneChannel() {
       <ScrapSales onMore={() => go("sales")} />
 
       {/* 7. 优质钢厂 */}
-      <QualityMills />
+      <QualityMills onMore={() => go("mills")} />
 
       {/* 8. 优选回收网点 */}
-      <QualityNetworks />
+      <QualityNetworks onMore={() => go("networks")} />
 
       {/* 9. 成交公告（单独一行） */}
       <DealAnnouncements />

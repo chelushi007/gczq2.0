@@ -109,7 +109,7 @@ export const demandRecos: DemandReco[] = [
   { id: "DS08", type: "sales", category: "heavy", province: "安徽", title: "马钢周边重废现货出售", price: 2540, unit: "元/吨", status: "询价中", spec: "重型统料", place: "安徽·马鞍山" },
   // —— 其余省份覆盖（保证地图悬停联动）——
   { id: "DR09", type: "purchase", category: "medium", province: "福建", title: "三钢闽光中型废钢采购", price: 2560, unit: "元/吨", status: "竞价中", spec: "中废统料", place: "福建·三明" },
-  { id: "DR10", type: "purchase", category: "heavy", province: "四川", title: "攀成钢重型废钢回收 月需 2000 吨", price: 2600, unit: "元/吨", status: "固定价", spec: "重型统料", place: "四川·成都" },
+  { id: "DR10", type: "purchase", category: "heavy", province: "四川", title: "攀成钢重型废钢回收 月需 2000 ���", price: 2600, unit: "元/吨", status: "固定价", spec: "重型统料", place: "四川·成都" },
   { id: "DS09", type: "sales", category: "heavy", province: "内蒙古", title: "包钢周边重废现货出售", price: 2520, unit: "元/吨", status: "竞价中", spec: "重型统料", place: "内蒙古·包头" },
   { id: "DR11", type: "purchase", category: "shear", province: "天津", title: "天钢剪切料采购 就近提货", price: 2700, unit: "元/吨", status: "竞价中", spec: "1.2m 剪切", place: "天津·东丽" },
   { id: "DR12", type: "purchase", category: "alloy", province: "上海", title: "宝钢合金钢边角料回收", price: 3480, unit: "元/吨", status: "询价中", spec: "低合金", place: "上海·宝山" },
@@ -266,7 +266,7 @@ export const listings: Listing[] = [
   // —— 固定价销售（4）——
   { id: "G2631", title: "报废设备金属固定价销售", category: "中型废钢", catKey: "medium", channel: "固定价销售", price: 2450, unit: "元/吨", quantity: "400 吨", spec: "报废设备", region: "湖北·武汉", status: "固定价", company: "武钢集团" },
   { id: "G2632", title: "不锈钢边角料固定价销售", category: "不锈钢", catKey: "stainless", channel: "固定价销售", price: 8600, unit: "元/吨", quantity: "120 吨", spec: "304 边角", region: "广东·佛山", status: "固定价", company: "广东联钢" },
-  { id: "G2633", title: "钢屑压块固定价销售", category: "钢屑刨花", catKey: "turning", channel: "固定价销售", price: 1980, unit: "元/吨", quantity: "300 吨", spec: "压块屑", region: "浙江·宁波", status: "固定价", company: "宁波钢铁" },
+  { id: "G2633", title: "钢屑压块固定价销售", category: "钢屑刨花", catKey: "turning", channel: "固定价销售", price: 1980, unit: "元/吨", quantity: "300 吨", spec: "压块屑", region: "浙江·宁波", status: "固定价", company: "宁波钢��" },
   { id: "G2634", title: "铸造生铁固定价销售", category: "生铁铸铁", catKey: "pig", channel: "固定价销售", price: 2860, unit: "元/吨", quantity: "500 吨", spec: "铸造生铁", region: "湖南·湘潭", status: "固定价", company: "华菱湘钢" },
 ]
 
@@ -343,4 +343,118 @@ export const partnerCompanies: string[] = [
   "南钢股份",
   "中天钢铁",
   "建龙集团",
+]
+
+/* ------------------------------------------------------------------ */
+/* 优质钢厂                                                            */
+/* ------------------------------------------------------------------ */
+export type QualityMill = {
+  id: string
+  name: string
+  image: string
+  region: string
+  process: string
+  tags: string[]
+  annualDemand: string
+  desc: string
+  verified: boolean
+}
+
+export const qualityMills: QualityMill[] = [
+  {
+    id: "M01", name: "河钢集团 · 唐山钢铁", image: "/images/mill-1.png", region: "河北·唐山", process: "长流程 / 电炉",
+    tags: ["月采≥8万吨", "重型废钢", "阳光结算"], annualDemand: "年采废钢 96 万吨",
+    desc: "华北龙头钢企，长期稳定采购重型废钢与剪切料，支持磅计验质、货款日结。", verified: true,
+  },
+  {
+    id: "M02", name: "沙钢集团 · 张家港", image: "/images/mill-2.png", region: "江苏·张家港", process: "电炉短流程",
+    tags: ["月采≥10万吨", "剪切料", "月结账期"], annualDemand: "年采废钢 120 万吨",
+    desc: "华东特大型民营钢厂，电炉短流程主力，剪切料与优质重废需求量大。", verified: true,
+  },
+  {
+    id: "M03", name: "山东钢铁 · 日照基地", image: "/images/mill-3.png", region: "山东·日照", process: "长流程",
+    tags: ["月采≥6万吨", "中重废", "就近调度"], annualDemand: "年采废钢 72 万吨",
+    desc: "沿海先进钢铁基地，港口物流便利，稳定采购中型与重型废钢。", verified: true,
+  },
+  {
+    id: "M04", name: "本钢集团 · 板材厂", image: "/images/mill-1.png", region: "辽宁·本溪", process: "长流程 / 转炉",
+    tags: ["月采≥5万吨", "生铁铸铁", "季度框采"], annualDemand: "年采废钢 60 万吨",
+    desc: "东北老牌钢企，转炉配吃废钢，长期采购生铁铸铁与重废，支持季度框架采购。", verified: true,
+  },
+  {
+    id: "M05", name: "太钢集团 · 不锈钢", image: "/images/mill-2.png", region: "山西·太原", process: "电炉",
+    tags: ["月采≥3万吨", "不锈钢废料", "高价回收"], annualDemand: "年采不锈废 36 万吨",
+    desc: "全球不锈钢龙头，专项采购不锈钢边角料与合金废钢，高价稳定回收。", verified: true,
+  },
+  {
+    id: "M06", name: "中天钢铁 · 南通基地", image: "/images/mill-3.png", region: "江苏·南通", process: "电炉短流程",
+    tags: ["月采≥7万吨", "轻薄料", "物流补贴"], annualDemand: "年采废钢 84 万吨",
+    desc: "长三角优质钢企，电炉产能扩张，轻薄料与破碎料需求旺盛，提供物流补贴。", verified: true,
+  },
+]
+
+/* 成为钢厂供应商：流程 */
+export const millSupplierSteps: { step: string; title: string; desc: string }[] = [
+  { step: "01", title: "提交入驻申请", desc: "填写企业与资质信息" },
+  { step: "02", title: "资质审核认证", desc: "平台核验营业执照与经营资质" },
+  { step: "03", title: "签订合作协议", desc: "在线签约，明确结算方式" },
+  { step: "04", title: "对接钢厂需求", desc: "匹配区域钢厂采购计划" },
+  { step: "05", title: "稳定供货结算", desc: "阳光结算、货款按约到账" },
+]
+
+/* ------------------------------------------------------------------ */
+/* 优选回收网点                                                        */
+/* ------------------------------------------------------------------ */
+export type QualityNetwork = {
+  id: string
+  name: string
+  image: string
+  region: string
+  tags: string[]
+  capacity: string
+  rating: number
+  desc: string
+  verified: boolean
+}
+
+export const qualityNetworks: QualityNetwork[] = [
+  {
+    id: "R01", name: "鑫盛再生资源回收", image: "/images/recycle-1.png", region: "河北·唐山·丰南区",
+    tags: ["重型破碎线", "自有车队", "反向开票"], capacity: "月加工 1.2 万吨", rating: 4.9,
+    desc: "区域大型废钢集散中心，配备重型破碎与智能分选设备，覆盖冀东回收网络。", verified: true,
+  },
+  {
+    id: "R02", name: "绿环金属回收", image: "/images/recycle-2.png", region: "江苏·张家港·杨舍镇",
+    tags: ["剪切加工", "过磅可视", "验质检斤"], capacity: "月加工 9 千吨", rating: 4.8,
+    desc: "长江沿线回收网点，剪切料加工能力强，全程过磅轨迹可视、第三方验质。", verified: true,
+  },
+  {
+    id: "R03", name: "顺发废旧金属", image: "/images/recycle-3.png", region: "山东·日照·岚山区",
+    tags: ["港口仓储", "集港调运", "供应链金融"], capacity: "月加工 1 万吨", rating: 4.8,
+    desc: "临港回收集散点，仓储与集港调运一体化，支持货款垫资与账期融资。", verified: true,
+  },
+  {
+    id: "R04", name: "东北再生物资", image: "/images/recycle-1.png", region: "辽宁·本溪·平山区",
+    tags: ["生铁回收", "冬季储备", "月结"], capacity: "月加工 8 千吨", rating: 4.7,
+    desc: "东北区域核心网点，擅长生铁铸铁回收与冬季货源储备，稳定对接本地钢厂。", verified: true,
+  },
+  {
+    id: "R05", name: "晋能不锈钢回收", image: "/images/recycle-2.png", region: "山西·太原·尖草坪区",
+    tags: ["不锈分选", "光谱检测", "高值回收"], capacity: "月加工 5 千吨", rating: 4.9,
+    desc: "专业不锈钢与合金废料回收网点，配备光谱在线检测，牌号分选精准。", verified: true,
+  },
+  {
+    id: "R06", name: "通达再生资源", image: "/images/recycle-3.png", region: "江苏·南通·通州区",
+    tags: ["轻薄打包", "就近收运", "阳光结算"], capacity: "月加工 7 千吨", rating: 4.7,
+    desc: "长三角轻薄料打包加工网点，就近收运效率高，线上对账、资金存管结算。", verified: true,
+  },
+]
+
+/* 成为回收网点：流程 */
+export const networkJoinSteps: { step: string; title: string; desc: string }[] = [
+  { step: "01", title: "网点入驻申请", desc: "提交场地与经营资料" },
+  { step: "02", title: "实地核验评估", desc: "核验场地、设备与合规情况" },
+  { step: "03", title: "授牌认证挂网", desc: "通过后授予优选网点认证" },
+  { step: "04", title: "区域需求对接", desc: "获取钢厂与平台采购需求" },
+  { step: "05", title: "运营扶持赋能", desc: "物流、金融、结算全程扶持" },
 ]

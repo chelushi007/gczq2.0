@@ -38,6 +38,7 @@ import { DistributionTabs, SectionTitle } from "./steel-zone/demand-distribution
 import { RegionCascader, type RegionSelection } from "./steel-zone/region-cascader"
 import { ScrapCard } from "./steel-zone/scrap-card"
 import { SteelListPage, type ListKind } from "./steel-zone/list-page"
+import { QualityMills, QualityNetworks } from "./steel-zone/quality-partners"
 
 type View = "home" | ListKind
 const topNav: { label: string; view: View }[] = [
@@ -172,7 +173,13 @@ export function SteelZoneChannel() {
       {/* 6. 废钢出售 */}
       <ScrapSales onMore={() => go("sales")} />
 
-      {/* 7. 成交公告（单独一行） */}
+      {/* 7. 优质钢厂 */}
+      <QualityMills />
+
+      {/* 8. 优选回收网点 */}
+      <QualityNetworks />
+
+      {/* 9. 成交公告（单独一行） */}
       <DealAnnouncements />
 
       {/* 8. 资讯服务（单独一行） */}

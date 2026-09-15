@@ -34,6 +34,14 @@ export default function Page() {
   const [millSection, setMillSection] = useState<MillMenuKey>("overview")
   const [stationLeaf, setStationLeaf] = useState<string>("station-supplier-bidding-signup")
   const [supplierSub, setSupplierSub] = useState<SupplierSub>("enterprise")
+  const [millAutoPublish, setMillAutoPublish] = useState<"bidding" | "fixed" | null>(null)
+
+  // 钢厂专区“发布回收需求”：按竞价/固定价跳转到采购管理对应发布页
+  const handlePublishDemand = (method: "bidding" | "fixed") => {
+    setMillSection(method === "bidding" ? "purchase-bidding" : "purchase-fixed")
+    setMillAutoPublish(method)
+    setActive("mill")
+  }
 
   const crumb = titleMap[active]
   const stationPath = active === "station" ? stationLeafPath[stationLeaf] : null
@@ -45,7 +53,10 @@ export default function Page() {
         active={active}
         onSelect={setActive}
         millSection={millSection}
-        onMillSectionChange={setMillSection}
+        onMillSectionChange={(s) => {
+          setMillAutoPublish(null)
+          setMillSection(s)
+        }}
         stationLeaf={stationLeaf}
         onStationLeafChange={setStationLeaf}
         supplierSub={supplierSub}
@@ -74,11 +85,18 @@ export default function Page() {
               <PortalHome onNavigateSteel={() => setActive("portal-steel")} />
             </div>
           )}
-          {active === "mill" && <SteelMillWorkspace section={millSection} onNavigate={setMillSection} />}
+          {active === "mill" && (
+            <SteelMillWorkspace
+              section={millSection}
+              onNavigate={setMillSection}
+              autoPublish={millAutoPublish}
+              onAutoPublishConsumed={() => setMillAutoPublish(null)}
+            />
+          )}
           {active === "station" && <StationWorkspace leaf={stationLeaf} onNavigate={setStationLeaf} />}
           {active === "portal-steel" && (
             <div className="h-full overflow-y-auto">
-              <SteelZoneChannel />
+              <SteelZoneChannel onPublishDemand={handlePublishDemand} />
             </div>
           )}
           {(active === "supplier" || active === "ops-tbd") && (

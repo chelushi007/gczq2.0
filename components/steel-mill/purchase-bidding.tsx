@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Plus, Search, Settings2, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/shared/page-header"
@@ -15,13 +15,22 @@ const tabs = ["全部", "待审核", "进行中", "待开标", "已成交", "已
 const categories = ["全部类别", "重废", "统废", "生铁"]
 const regions = ["全部区域", "江苏·苏州", "上海·宝山", "浙江·嘉兴", "江苏·无锡", "安徽·马鞍山"]
 
-export function PurchaseBidding() {
+export function PurchaseBidding({
+  autoPublish,
+  onAutoPublishConsumed,
+}: { autoPublish?: boolean; onAutoPublishConsumed?: () => void } = {}) {
   const [tab, setTab] = useState("全部")
   const [category, setCategory] = useState("全部类别")
   const [region, setRegion] = useState("全部区域")
   const [keyword, setKeyword] = useState("")
   const [manageItem, setManageItem] = useState<BiddingItem | null>(null)
-  const [publishing, setPublishing] = useState(false)
+  const [publishing, setPublishing] = useState(!!autoPublish)
+
+  // 从钢厂专区“发布回收需求”跳转而来时，直接进入发布表单，并清除一次性标记
+  useEffect(() => {
+    if (autoPublish) onAutoPublishConsumed?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const millBids = useMillBids()
   const rows = useMemo(() => {

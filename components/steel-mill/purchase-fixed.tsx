@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Plus, Settings2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/shared/page-header"
@@ -12,10 +12,19 @@ import { FixedPublish } from "./fixed-publish"
 
 const tabs = ["全部", "待审核", "挂单中", "部分成交", "已完成", "已下架"]
 
-export function PurchaseFixed() {
+export function PurchaseFixed({
+  autoPublish,
+  onAutoPublishConsumed,
+}: { autoPublish?: boolean; onAutoPublishConsumed?: () => void } = {}) {
   const [tab, setTab] = useState("全部")
   const [managing, setManaging] = useState<FixedItem | null>(null)
-  const [publishing, setPublishing] = useState(false)
+  const [publishing, setPublishing] = useState(!!autoPublish)
+
+  // 从钢厂专区“发布回收需求”跳转而来时，直接进入发布表单，并清除一次性标记
+  useEffect(() => {
+    if (autoPublish) onAutoPublishConsumed?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   if (publishing) {
     return <FixedPublish onBack={() => setPublishing(false)} />

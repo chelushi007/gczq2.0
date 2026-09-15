@@ -54,7 +54,11 @@ const topNav: { label: string; view: View }[] = [
 const LIST_KINDS: ListKind[] = ["opportunity", "purchase", "sales"]
 const PARTNER_KINDS: PartnerKind[] = ["mills", "networks"]
 
-export function SteelZoneChannel() {
+export function SteelZoneChannel({
+  onPublishDemand,
+}: {
+  onPublishDemand?: (method: "bidding" | "fixed") => void
+} = {}) {
   const [publishOpen, setPublishOpen] = useState(false)
   const [searchCat, setSearchCat] = useState("all")
   const [catOpen, setCatOpen] = useState(false)
@@ -201,7 +205,15 @@ export function SteelZoneChannel() {
         </>
       )}
 
-      {publishOpen && <PublishDemandModal onClose={() => setPublishOpen(false)} />}
+      {publishOpen && (
+        <PublishDemandModal
+          onClose={() => setPublishOpen(false)}
+          onSelect={(method) => {
+            setPublishOpen(false)
+            onPublishDemand?.(method)
+          }}
+        />
+      )}
     </div>
   )
 }
@@ -600,15 +612,36 @@ function PartnerCompanies() {
   )
 }
 
-/* ------------------------- 发布回收需求 弹窗 ------------------------- */
-function PublishDemandModal({ onClose }: { onClose: () => void }) {
-  const [submitted, setSubmitted] = useState(false)
+/* ------------------------- 发布回收需求 · 选择回收方式 ------------------------- */
+function PublishDemandModal({
+  onClose,
+  onSelect,
+}: {
+  onClose: () => void
+  onSelect: (method: "bidding" | "fixed") => void
+}) {
+  const options = [
+    {
+      method: "bidding" as const,
+      icon: Gavel,
+      title: "竞价回收",
+      desc: "发布竞价需求，供应商在线报价，价优者得，公开透明",
+      tags: ["多方竞价", "价格更优", "全程留痕"],
+    },
+    {
+      method: "fixed" as const,
+      icon: Scale,
+      title: "固定价回收",
+      desc: "以一口价挂出采购需求，供应商直接接单供货，成交更快",
+      tags: ["一口价", "即时接单", "流程简单"],
+    },
+  ]
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         role="dialog"
         aria-label="发布回收需求"
-        className="w-full max-w-lg rounded-xl border border-border bg-card p-6 shadow-xl"
+        className="w-full max-w-xl rounded-xl border border-border bg-card p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -620,78 +653,36 @@ function PublishDemandModal({ onClose }: { onClose: () => void }) {
             <X className="size-4" />
           </button>
         </div>
+        <p className="mt-1 text-xs text-muted-foreground">请选择回收方式，将进入采购管理填写并发布需求</p>
 
-        {submitted ? (
-          <div className="flex flex-col items-center gap-2 py-10 text-center">
-            <div className="flex size-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
-              <ShieldCheck className="size-6" />
-            </div>
-            <p className="text-sm font-medium text-foreground">需求已发布</p>
-            <p className="text-xs text-muted-foreground">平台将为您匹配区域内认证回收商，请留意工作台通知。</p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {options.map((o) => (
             <button
-              onClick={onClose}
-              className="mt-3 rounded-md bg-primary px-5 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              key={o.method}
+              onClick={() => onSelect(o.method)}
+              className="group flex flex-col rounded-xl border border-border bg-background p-4 text-left transition-all hover:border-primary hover:shadow-md"
             >
-              完成
-            </button>
-          </div>
-        ) : (
-          <div className="mt-4 space-y-3">
-            <Field label="废钢品类">
-              <select className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary">
-                {scrapCategories.slice(1).map((c) => (
-                  <option key={c.key}>{c.name}</option>
+              <div className="flex items-center gap-3">
+                <span className="grid size-10 place-items-center rounded-lg bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <o.icon className="size-5" />
+                </span>
+                <span className="text-sm font-semibold text-foreground">{o.title}</span>
+              </div>
+              <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">{o.desc}</p>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {o.tags.map((t) => (
+                  <span key={t} className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    {t}
+                  </span>
                 ))}
-              </select>
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="需求数量（吨）">
-                <input
-                  type="number"
-                  placeholder="如 1000"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                />
-              </Field>
-              <Field label="意向单价（元/吨）">
-                <input
-                  type="number"
-                  placeholder="如 2600"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                />
-              </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="所在地区">
-                <input
-                  placeholder="如 河北·唐山"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                />
-              </Field>
-              <Field label="规格要求">
-                <input
-                  placeholder="如 ≥6mm 优质料"
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
-                />
-              </Field>
-            </div>
-            <button
-              onClick={() => setSubmitted(true)}
-              className="mt-2 w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              发布需求
+              </div>
+              <span className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
+                去发布 <ArrowRight className="size-3 transition-transform group-hover:translate-x-0.5" />
+              </span>
             </button>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
-  )
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-foreground">{label}</span>
-      {children}
-    </label>
   )
 }

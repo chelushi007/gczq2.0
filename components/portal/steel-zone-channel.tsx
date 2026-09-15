@@ -36,6 +36,7 @@ import {
 } from "@/lib/steel-zone-data"
 import { ZoneBanner } from "./steel-zone/zone-banner"
 import { DistributionTabs, SectionTitle } from "./steel-zone/demand-distribution"
+import { RegionCascader, type RegionSelection } from "./steel-zone/region-cascader"
 
 const topNav = ["首页", "竞价大厅", "废钢采购", "废钢出售"]
 
@@ -43,6 +44,7 @@ export function SteelZoneChannel() {
   const [publishOpen, setPublishOpen] = useState(false)
   const [searchCat, setSearchCat] = useState("all")
   const [catOpen, setCatOpen] = useState(false)
+  const [region, setRegion] = useState<RegionSelection>({})
 
   return (
     <div className="min-h-full bg-background pb-16">
@@ -83,11 +85,7 @@ export function SteelZoneChannel() {
       {/* 2. 搜索引擎 */}
       <div className="relative z-10 mx-auto -mt-8 max-w-4xl px-6">
         <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-lg">
-          <button className="flex shrink-0 items-center gap-1.5 px-2 text-sm font-medium text-foreground">
-            <MapPin className="size-4 text-primary" />
-            全国
-            <ChevronDown className="size-3.5 text-muted-foreground" />
-          </button>
+          <RegionCascader value={region} onChange={setRegion} />
           <span className="h-6 w-px bg-border" />
           <div className="relative shrink-0">
             <button

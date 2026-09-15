@@ -71,14 +71,14 @@ function mixColor(t: number) {
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`
 }
 
-// 数量密度色块（choropleth）——5 档离散分级，由浅到深
-const TIER_COLORS = ["#e4eefc", "#bcd6f7", "#88b6f0", "#4f8ae4", "#1e56d6"]
+// 数量密度色块（choropleth）——4 档离散分级，由浅到深
+const TIER_COLORS = ["#dbe9fb", "#a7c9f2", "#5f97e6", "#1e56d6"]
 const NO_DATA_FILL = "#eef3f7"
 
-// 根据最大值把数值切成 5 档，返回各档上界（用于填色与图例）
+// 根据最大值把数值切成 4 档，返回各档上界（用于填色与图例）
 function buildTiers(max: number) {
-  const top = Math.max(max, 5)
-  return [0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.max(1, Math.round(top * f)))
+  const top = Math.max(max, 4)
+  return [0.25, 0.5, 0.75, 1].map((f) => Math.max(1, Math.round(top * f)))
 }
 
 function tierIndex(v: number, tiers: number[]) {

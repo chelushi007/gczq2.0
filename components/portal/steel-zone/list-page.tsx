@@ -68,7 +68,15 @@ function stripSuffix(name?: string) {
   return name.replace(/(省|市|自治区|自治州|地区|县|区|旗)$/g, "")
 }
 
-export function SteelListPage({ kind, onBack }: { kind: ListKind; onBack: () => void }) {
+export function SteelListPage({
+  kind,
+  onBack,
+  onOpen,
+}: {
+  kind: ListKind
+  onBack: () => void
+  onOpen?: (id: string) => void
+}) {
   const config = KIND_CONFIG[kind]
   const [cat, setCat] = useState("all")
   const [sub, setSub] = useState("all")
@@ -205,7 +213,12 @@ export function SteelListPage({ kind, onBack }: { kind: ListKind; onBack: () => 
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {results.map((it) => (
-            <ScrapCard key={it.id} item={it} sale={it.channel.endsWith("销售")} />
+            <ScrapCard
+              key={it.id}
+              item={it}
+              sale={it.channel.endsWith("销售")}
+              onClick={onOpen && (() => onOpen(it.id))}
+            />
           ))}
         </div>
       )}

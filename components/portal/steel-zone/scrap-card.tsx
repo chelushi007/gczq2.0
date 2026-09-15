@@ -9,11 +9,17 @@ export const statusStyle: Record<string, string> = {
   固定价: "bg-emerald-600 text-white",
 }
 
-export function ScrapCard({ item, sale }: { item: Listing; sale?: boolean }) {
+export function ScrapCard({ item, sale, onClick }: { item: Listing; sale?: boolean; onClick?: () => void }) {
   const priceColor = sale ? "text-emerald-600" : "text-destructive"
   const isBid = item.channel.startsWith("竞价")
   return (
-    <div className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md">
+    <div
+      onClick={onClick}
+      className={cn(
+        "group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md",
+        onClick && "cursor-pointer",
+      )}
+    >
       <div className="relative">
         <img
           src={scrapImage(item.category) || "/placeholder.svg"}

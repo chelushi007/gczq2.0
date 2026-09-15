@@ -3,7 +3,6 @@
 import { useState } from "react"
 import {
   Search,
-  MapPin,
   ChevronDown,
   Megaphone,
   Gavel,
@@ -37,14 +36,28 @@ import {
 import { ZoneBanner } from "./steel-zone/zone-banner"
 import { DistributionTabs, SectionTitle } from "./steel-zone/demand-distribution"
 import { RegionCascader, type RegionSelection } from "./steel-zone/region-cascader"
+import { ScrapCard } from "./steel-zone/scrap-card"
+import { SteelListPage, type ListKind } from "./steel-zone/list-page"
 
-const topNav = ["首页", "竞价大厅", "废钢采购", "废钢出售"]
+type View = "home" | ListKind
+const topNav: { label: string; view: View }[] = [
+  { label: "首页", view: "home" },
+  { label: "废钢商机", view: "opportunity" },
+  { label: "废钢采购", view: "purchase" },
+  { label: "废钢出售", view: "sales" },
+]
 
 export function SteelZoneChannel() {
   const [publishOpen, setPublishOpen] = useState(false)
   const [searchCat, setSearchCat] = useState("all")
   const [catOpen, setCatOpen] = useState(false)
   const [region, setRegion] = useState<RegionSelection>({})
+  const [view, setView] = useState<View>("home")
+
+  function go(v: View) {
+    setView(v)
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 })
+  }
 
   return (
     <div className="min-h-full bg-background pb-16">
@@ -58,15 +71,16 @@ export function SteelZoneChannel() {
           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">CHANNEL</span>
         </div>
         <nav className="flex flex-1 items-center gap-5 text-sm">
-          {topNav.map((t, i) => (
+          {topNav.map((t) => (
             <button
-              key={t}
+              key={t.view}
+              onClick={() => go(t.view)}
               className={cn(
                 "whitespace-nowrap py-1 transition-colors",
-                i === 0 ? "font-semibold text-primary" : "text-foreground/75 hover:text-primary",
+                view === t.view ? "font-semibold text-primary" : "text-foreground/75 hover:text-primary",
               )}
             >
-              {t}
+              {t.label}
             </button>
           ))}
         </nav>
@@ -79,6 +93,10 @@ export function SteelZoneChannel() {
         </button>
       </header>
 
+      {view !== "home" ? (
+        <SteelListPage kind={view} onBack={() => go("home")} />
+      ) : (
+        <>
       {/* 1. Banner 轮播 */}
       <ZoneBanner />
 
@@ -145,14 +163,14 @@ export function SteelZoneChannel() {
       {/* 3. 全国分布（废钢需求 / 回收网点 两个 Tab） */}
       <DistributionTabs />
 
-      {/* 4. 竞价大厅 */}
-      <BiddingHall />
+      {/* 4. 废钢商机 */}
+      <BiddingHall onMore={() => go("opportunity")} />
 
       {/* 5. 废钢采购 */}
-      <ScrapPurchase />
+      <ScrapPurchase onMore={() => go("purchase")} />
 
-      {/* 6. 废钢销售 */}
-      <ScrapSales />
+      {/* 6. 废钢出售 */}
+      <ScrapSales onMore={() => go("sales")} />
 
       {/* 7. 成交公告（单独一行） */}
       <DealAnnouncements />
@@ -165,14 +183,16 @@ export function SteelZoneChannel() {
 
       {/* 10. 合作企业 */}
       <PartnerCompanies />
+        </>
+      )}
 
       {publishOpen && <PublishDemandModal onClose={() => setPublishOpen(false)} />}
     </div>
   )
 }
 
-/* ------------------------- 竞价大厅（表格 + 详情卡，参考图2） ------------------------- */
-function BiddingHall() {
+/* ------------------------- 废钢商机（表格 + 详情卡，参考图2） ------------------------- */
+function BiddingHall({ onMore }: { onMore: () => void }) {
   const tabs: { key: Channel; label: string; icon: LucideIcon }[] = [
     { key: "竞价回收", label: "竞价回收", icon: Gavel },
     { key: "竞价销售", label: "竞价销售", icon: Flame },
@@ -191,7 +211,7 @@ function BiddingHall() {
 
   return (
     <section className="mx-auto max-w-6xl px-6">
-      <SectionTitle title="竞价大厅" />
+      <SectionTitle title="废钢商机" action={<ViewMoreLink onClick={onMore} />} />
       <div className="mb-4 inline-flex rounded-lg border border-border bg-card p-1">
         {tabs.map((t) => {
           const Icon = t.icon
@@ -321,7 +341,7 @@ function Row({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
 }
 
 /* ------------------------- 废钢采购（分类联动 + 竞价回收 / 固定价回收 各两行八卡） ------------------------- */
-function ScrapPurchase() {
+function ScrapPurchase({ onMore }: { onMore: () => void }) {
   const [cat, setCat] = useState("all")
   const inCat = (l: Listing) => cat === "all" || l.catKey === cat
   const bidItems = listings.filter((l) => l.channel === "竞价回收" && inCat(l)).slice(0, 8)
@@ -353,6 +373,7 @@ function ScrapPurchase() {
 
       <PurchaseGroup label="竞价回收" icon={Gavel} items={bidItems} />
       <PurchaseGroup label="固定价回收" icon={Scale} items={fixedItems} className="mt-8" />
+      <ViewMoreButton label="查看更多废钢采购" onClick={onMore} />
     </section>
   )
 }
@@ -391,75 +412,44 @@ function PurchaseGroup({
 }
 
 /* ------------------------- 废钢出售（卡片式，两行八卡） ------------------------- */
-function ScrapSales() {
+function ScrapSales({ onMore }: { onMore: () => void }) {
   const items = [...listingsByChannel("竞价销售"), ...listingsByChannel("固定价销售")].slice(0, 8)
   return (
     <section className="mx-auto max-w-6xl px-6">
-      <SectionTitle title="废钢出售" />
+      <SectionTitle title="废钢出售" action={<ViewMoreLink onClick={onMore} />} />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {items.map((it) => (
           <ScrapCard key={it.id} item={it} sale />
         ))}
       </div>
+      <ViewMoreButton label="查看更多废钢出售" onClick={onMore} />
     </section>
   )
 }
 
-const statusStyle: Record<string, string> = {
-  竞价中: "bg-primary text-primary-foreground",
-  报名中: "bg-amber-500 text-white",
-  即将开始: "bg-amber-500 text-white",
-  固定价: "bg-emerald-600 text-white",
+/* 板块右上角“查看更多”文字链接 */
+function ViewMoreLink({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-primary"
+    >
+      查看更多 <ArrowRight className="size-3" />
+    </button>
+  )
 }
 
-function ScrapCard({ item, sale }: { item: Listing; sale?: boolean }) {
-  const priceColor = sale ? "text-emerald-600" : "text-destructive"
-  const isBid = item.channel.startsWith("竞价")
+/* 板块底部整行“查看更多”按钮 */
+function ViewMoreButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <div className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/50 hover:shadow-md">
-      <div className="relative">
-        <img
-          src={scrapImage(item.category) || "/placeholder.svg"}
-          alt={item.title}
-          className="h-32 w-full object-cover"
-          crossOrigin="anonymous"
-        />
-        <span
-          className={cn(
-            "absolute left-2 top-2 rounded px-1.5 py-0.5 text-[10px] font-medium",
-            statusStyle[item.status] ?? "bg-muted text-muted-foreground",
-          )}
-        >
-          {item.status}
-        </span>
-        {item.endsIn && (
-          <span className="absolute bottom-0 left-0 right-0 bg-black/45 px-2 py-1 text-[11px] text-white">
-            {isBid ? `${item.endsIn}` : item.spec}
-          </span>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col p-3">
-        <h3 className="line-clamp-2 min-h-10 text-[13px] font-medium leading-snug text-foreground">{item.title}</h3>
-        <div className="mt-2 space-y-1 text-xs">
-          <div className="flex items-baseline gap-2">
-            <span className="shrink-0 text-muted-foreground">{isBid ? "起拍价" : "价格"}</span>
-            <span className={cn("font-bold", priceColor)}>
-              {item.price.toLocaleString()}
-              <span className="text-[11px] font-normal text-muted-foreground"> {item.unit}</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 text-muted-foreground">数　量</span>
-            <span className="font-medium text-emerald-600">{item.quantity}</span>
-          </div>
-          <div className="flex items-center gap-1 truncate text-muted-foreground">
-            <MapPin className="size-3 shrink-0" />
-            <span className="truncate">
-              {item.region} · {item.company}
-            </span>
-          </div>
-        </div>
-      </div>
+    <div className="mt-6 flex justify-center">
+      <button
+        onClick={onClick}
+        className="flex items-center gap-1.5 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary"
+      >
+        {label}
+        <ArrowRight className="size-4" />
+      </button>
     </div>
   )
 }

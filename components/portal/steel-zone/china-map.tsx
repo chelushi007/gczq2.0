@@ -71,6 +71,21 @@ function mixColor(t: number) {
   return `rgb(${c[0]}, ${c[1]}, ${c[2]})`
 }
 
+// 数量密度色块（choropleth）——5 档离散分级，由浅到深
+const TIER_COLORS = ["#e4eefc", "#bcd6f7", "#88b6f0", "#4f8ae4", "#1e56d6"]
+const NO_DATA_FILL = "#eef3f7"
+
+// 根据最大值把数值切成 5 档，返回各档上界（用于填色与图例）
+function buildTiers(max: number) {
+  const top = Math.max(max, 5)
+  return [0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.max(1, Math.round(top * f)))
+}
+
+function tierIndex(v: number, tiers: number[]) {
+  for (let i = 0; i < tiers.length; i++) if (v <= tiers[i]) return i
+  return tiers.length - 1
+}
+
 export function ChinaMap({
   values = {},
   hovered,
@@ -121,6 +136,17 @@ export function ChinaMap({
     return { min: Math.min(...vs), max: Math.max(...vs) }
   }, [values])
 
+  // 密度色块分档（choropleth）及图例区间
+  const { tiers, legend } = useMemo(() => {
+    const tiers = buildTiers(max)
+    const legend = tiers.map((upper, i) => {
+      const lower = i === 0 ? 1 : tiers[i - 1] + 1
+      const label = i === 0 ? `≤ ${upper}` : upper === lower ? `${upper}` : `${lower} - ${upper}`
+      return { label, color: TIER_COLORS[i] }
+    })
+    return { tiers, legend }
+  }, [max])
+
   const hoveredCentroid = hovered ? centroids[hovered] : null
 
   return (
@@ -137,17 +163,19 @@ export function ChinaMap({
           </filter>
         </defs>
 
-        {/* 省界填充 */}
+        {/* 省份密度色块（choropleth）*/}
         <g>
           {features.map(({ feature, name }) => {
             const isHover = hovered === name
+            const v = values[name]
+            const fill = v == null ? NO_DATA_FILL : TIER_COLORS[tierIndex(v, tiers)]
             return (
               <path
                 key={name}
                 d={pathFor(feature) ?? undefined}
-                fill={isHover ? "#a9d1fb" : "#d6ecfe"}
-                stroke="#ffffff"
-                strokeWidth={1.2}
+                fill={fill}
+                stroke={isHover ? "#1e40af" : "#ffffff"}
+                strokeWidth={isHover ? 1.8 : 1.2}
                 vectorEffect="non-scaling-stroke"
                 className="cursor-pointer transition-colors duration-150"
                 onMouseEnter={() => onHover(name)}
@@ -257,6 +285,29 @@ export function ChinaMap({
           </div>
         </div>
       )}
+
+      {/* 密度色块图例（示例）*/}
+      <div className="absolute bottom-2 left-2 rounded-lg border border-sky-100 bg-white/85 px-3 py-2 shadow-sm backdrop-blur-sm">
+        <p className="mb-1.5 text-[11px] font-semibold text-slate-600">数量密度（示例）</p>
+        <div className="flex flex-col gap-1">
+          {legend.map((item) => (
+            <div key={item.label} className="flex items-center gap-1.5">
+              <span
+                className="inline-block size-3 rounded-sm ring-1 ring-inset ring-black/5"
+                style={{ backgroundColor: item.color }}
+              />
+              <span className="text-[10px] leading-none text-slate-500 tabular-nums">{item.label}</span>
+            </div>
+          ))}
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <span
+              className="inline-block size-3 rounded-sm ring-1 ring-inset ring-black/5"
+              style={{ backgroundColor: NO_DATA_FILL }}
+            />
+            <span className="text-[10px] leading-none text-slate-500">暂无数据</span>
+          </div>
+        </div>
+      </div>
 
       {/* 南海诸岛 角标 */}
       <div className="absolute bottom-2 right-2 flex h-24 w-16 flex-col items-center justify-end rounded-md border border-sky-200 bg-sky-50/70 pb-1">

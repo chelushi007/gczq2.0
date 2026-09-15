@@ -57,12 +57,20 @@ const PROCESS_FILTERS = [
   { key: "转炉", label: "转炉" },
 ]
 
-export function PartnersListPage({ kind, onBack }: { kind: PartnerKind; onBack: () => void }) {
-  return kind === "mills" ? <MillsList onBack={onBack} /> : <NetworksList onBack={onBack} />
+export function PartnersListPage({
+  kind,
+  onBack,
+  onOpen,
+}: {
+  kind: PartnerKind
+  onBack: () => void
+  onOpen?: (id: string) => void
+}) {
+  return kind === "mills" ? <MillsList onBack={onBack} onOpen={onOpen} /> : <NetworksList onBack={onBack} onOpen={onOpen} />
 }
 
 /* ============================ 优质钢厂列表 ============================ */
-function MillsList({ onBack }: { onBack: () => void }) {
+function MillsList({ onBack, onOpen }: { onBack: () => void; onOpen?: (id: string) => void }) {
   const [region, setRegion] = useState<RegionSelection>({})
   const [keyword, setKeyword] = useState("")
   const [proc, setProc] = useState("all")
@@ -118,6 +126,7 @@ function MillsList({ onBack }: { onBack: () => void }) {
             metric={m.annualDemand}
             metricClass="text-destructive"
             cta="对接采购"
+            onOpen={onOpen && (() => onOpen(m.id))}
           />
         </li>
       ))}
@@ -126,7 +135,7 @@ function MillsList({ onBack }: { onBack: () => void }) {
 }
 
 /* ============================ 优选回收网点列表 ============================ */
-function NetworksList({ onBack }: { onBack: () => void }) {
+function NetworksList({ onBack, onOpen }: { onBack: () => void; onOpen?: (id: string) => void }) {
   const [region, setRegion] = useState<RegionSelection>({})
   const [keyword, setKeyword] = useState("")
   const [sort, setSort] = useState<SortKey>("default")
@@ -177,6 +186,7 @@ function NetworksList({ onBack }: { onBack: () => void }) {
             metric={n.capacity}
             metricClass="text-emerald-600"
             cta="联系网点"
+            onOpen={onOpen && (() => onOpen(n.id))}
           />
         </li>
       ))}
@@ -359,6 +369,7 @@ function PartnerRow({
   metric,
   metricClass,
   cta,
+  onOpen,
 }: {
   image: string
   name: string
@@ -373,9 +384,16 @@ function PartnerRow({
   metric: string
   metricClass: string
   cta: string
+  onOpen?: () => void
 }) {
   return (
-    <article className="group flex gap-4 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md">
+    <article
+      onClick={onOpen}
+      className={cn(
+        "group flex gap-4 rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md",
+        onOpen && "cursor-pointer",
+      )}
+    >
       <img
         src={image || "/placeholder.svg"}
         alt={name}
@@ -415,7 +433,10 @@ function PartnerRow({
           <p className="text-[11px] text-muted-foreground">{metricLabel}</p>
           <p className={cn("mt-0.5 text-sm font-bold leading-tight", metricClass)}>{metric}</p>
         </div>
-        <button className="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90">
+        <button
+          onClick={onOpen}
+          className="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
           {cta}
           <ArrowRight className="size-3.5" />
         </button>

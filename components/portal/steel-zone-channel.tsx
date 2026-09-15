@@ -40,6 +40,7 @@ import { ScrapCard } from "./steel-zone/scrap-card"
 import { SteelListPage, type ListKind } from "./steel-zone/list-page"
 import { QualityMills, QualityNetworks } from "./steel-zone/quality-partners"
 import { PartnersListPage, type PartnerKind } from "./steel-zone/partners-list-page"
+import { ListingDetailPage, MillDetailPage, NetworkDetailPage } from "./steel-zone/detail-pages"
 
 type View = "home" | ListKind | PartnerKind
 const topNav: { label: string; view: View }[] = [
@@ -64,11 +65,27 @@ export function SteelZoneChannel({
   const [catOpen, setCatOpen] = useState(false)
   const [region, setRegion] = useState<RegionSelection>({})
   const [view, setView] = useState<View>("home")
+  const [detail, setDetail] = useState<{ type: "listing" | "mill" | "network"; id: string } | null>(null)
 
   function go(v: View) {
     setView(v)
+    setDetail(null)
     if (typeof window !== "undefined") window.scrollTo({ top: 0 })
   }
+
+  function openDetail(type: "listing" | "mill" | "network", id: string) {
+    setDetail({ type, id })
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 })
+  }
+
+  function closeDetail() {
+    setDetail(null)
+    if (typeof window !== "undefined") window.scrollTo({ top: 0 })
+  }
+
+  const openListing = (id: string) => openDetail("listing", id)
+  const openMill = (id: string) => openDetail("mill", id)
+  const openNetwork = (id: string) => openDetail("network", id)
 
   return (
     <div className="min-h-full bg-background pb-16">
@@ -104,10 +121,22 @@ export function SteelZoneChannel({
         </button>
       </header>
 
-      {LIST_KINDS.includes(view as ListKind) ? (
-        <SteelListPage kind={view as ListKind} onBack={() => go("home")} />
+      {detail ? (
+        detail.type === "listing" ? (
+          <ListingDetailPage id={detail.id} onBack={closeDetail} />
+        ) : detail.type === "mill" ? (
+          <MillDetailPage id={detail.id} onBack={closeDetail} />
+        ) : (
+          <NetworkDetailPage id={detail.id} onBack={closeDetail} />
+        )
+      ) : LIST_KINDS.includes(view as ListKind) ? (
+        <SteelListPage kind={view as ListKind} onBack={() => go("home")} onOpen={openListing} />
       ) : PARTNER_KINDS.includes(view as PartnerKind) ? (
-        <PartnersListPage kind={view as PartnerKind} onBack={() => go("home")} />
+        <PartnersListPage
+          kind={view as PartnerKind}
+          onBack={() => go("home")}
+          onOpen={view === "mills" ? openMill : openNetwork}
+        />
       ) : (
         <>
       {/* 1. Banner 轮播 */}
@@ -177,19 +206,19 @@ export function SteelZoneChannel({
       <DistributionTabs />
 
       {/* 4. 废钢商机 */}
-      <BiddingHall onMore={() => go("opportunity")} />
+      <BiddingHall onMore={() => go("opportunity")} onOpen={openListing} />
 
       {/* 5. 废钢采购 */}
-      <ScrapPurchase onMore={() => go("purchase")} />
+      <ScrapPurchase onMore={() => go("purchase")} onOpen={openListing} />
 
       {/* 6. 废钢出售 */}
-      <ScrapSales onMore={() => go("sales")} />
+      <ScrapSales onMore={() => go("sales")} onOpen={openListing} />
 
       {/* 7. 优质钢厂 */}
-      <QualityMills onMore={() => go("mills")} />
+      <QualityMills onMore={() => go("mills")} onOpen={openMill} />
 
       {/* 8. 优选回收网点 */}
-      <QualityNetworks onMore={() => go("networks")} />
+      <QualityNetworks onMore={() => go("networks")} onOpen={openNetwork} />
 
       {/* 9. 成交公告（单独一行） */}
       <DealAnnouncements />
@@ -219,7 +248,7 @@ export function SteelZoneChannel({
 }
 
 /* ------------------------- 废钢商机（表格 + 详情卡，参考图2） ------------------------- */
-function BiddingHall({ onMore }: { onMore: () => void }) {
+function BiddingHall({ onMore, onOpen }: { onMore: () => void; onOpen: (id: string) => void }) {
   const tabs: { key: Channel; label: string; icon: LucideIcon }[] = [
     { key: "竞价回收", label: "竞价回收", icon: Gavel },
     { key: "竞价销售", label: "竞价销售", icon: Flame },
@@ -316,13 +345,13 @@ function BiddingHall({ onMore }: { onMore: () => void }) {
         </div>
 
         {/* 右：竞价详情卡 */}
-        {selected && <BidDetailCard item={selected} />}
+        {selected && <BidDetailCard item={selected} onOpen={() => onOpen(selected.id)} />}
       </div>
     </section>
   )
 }
 
-function BidDetailCard({ item }: { item: Listing }) {
+function BidDetailCard({ item, onOpen }: { item: Listing; onOpen: () => void }) {
   const live = item.status === "竞价中"
   const latest = latestBid(item)
   return (
@@ -330,11 +359,17 @@ function BidDetailCard({ item }: { item: Listing }) {
       <img
         src={scrapImage(item.category) || "/placeholder.svg"}
         alt={item.title}
-        className="h-40 w-full object-cover"
+        className="h-40 w-full cursor-pointer object-cover"
         crossOrigin="anonymous"
+        onClick={onOpen}
       />
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold text-foreground">{item.title}</h3>
+        <h3
+          onClick={onOpen}
+          className="line-clamp-2 cursor-pointer text-sm font-semibold text-foreground transition-colors hover:text-primary"
+        >
+          {item.title}
+        </h3>
         <dl className="mt-3 space-y-2 text-xs">
           <Row k="最新报价" v={latest ? `${latest.toLocaleString()} ${item.unit}` : "--"} strong />
           <Row k="起始价" v={`${item.price.toLocaleString()} ${item.unit}`} />
@@ -343,15 +378,10 @@ function BidDetailCard({ item }: { item: Listing }) {
           <Row k="剩余时间" v={item.endsIn ?? "--"} />
         </dl>
         <button
-          className={cn(
-            "mt-4 w-full rounded-md py-2 text-sm font-medium transition-colors",
-            live
-              ? "bg-primary text-primary-foreground hover:bg-primary/90"
-              : "cursor-not-allowed bg-muted text-muted-foreground",
-          )}
-          disabled={!live}
+          onClick={onOpen}
+          className="mt-4 w-full rounded-md bg-primary py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          {live ? "立即报价" : "未开始"}
+          {live ? "立即报价" : "查看详情"}
         </button>
       </div>
     </div>
@@ -368,7 +398,7 @@ function Row({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
 }
 
 /* ------------------------- 废钢采购（分类联动 + 竞价回收 / 固定价回收 各两行八卡） ------------------------- */
-function ScrapPurchase({ onMore }: { onMore: () => void }) {
+function ScrapPurchase({ onMore, onOpen }: { onMore: () => void; onOpen: (id: string) => void }) {
   const [cat, setCat] = useState("all")
   const inCat = (l: Listing) => cat === "all" || l.catKey === cat
   const bidItems = listings.filter((l) => l.channel === "竞价回收" && inCat(l)).slice(0, 8)
@@ -398,8 +428,8 @@ function ScrapPurchase({ onMore }: { onMore: () => void }) {
         }
       />
 
-      <PurchaseGroup label="竞价回收" icon={Gavel} items={bidItems} />
-      <PurchaseGroup label="固定价回收" icon={Scale} items={fixedItems} className="mt-8" />
+      <PurchaseGroup label="竞价回收" icon={Gavel} items={bidItems} onOpen={onOpen} />
+      <PurchaseGroup label="固定价回收" icon={Scale} items={fixedItems} className="mt-8" onOpen={onOpen} />
       <ViewMoreButton label="查看更多废钢采购" onClick={onMore} />
     </section>
   )
@@ -410,18 +440,19 @@ function PurchaseGroup({
   icon: Icon,
   items,
   className,
+  onOpen,
 }: {
   label: string
   icon: LucideIcon
   items: Listing[]
   className?: string
+  onOpen: (id: string) => void
 }) {
   return (
     <div className={className}>
       <div className="mb-3 flex items-center gap-2">
         <Icon className="size-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">{label}</h3>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{items.length} 条</span>
       </div>
       {items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card py-10 text-center text-sm text-muted-foreground">
@@ -430,7 +461,7 @@ function PurchaseGroup({
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
           {items.map((it) => (
-            <ScrapCard key={it.id} item={it} />
+            <ScrapCard key={it.id} item={it} onClick={() => onOpen(it.id)} />
           ))}
         </div>
       )}
@@ -439,14 +470,14 @@ function PurchaseGroup({
 }
 
 /* ------------------------- 废钢出售（卡片式，两行八卡） ------------------------- */
-function ScrapSales({ onMore }: { onMore: () => void }) {
+function ScrapSales({ onMore, onOpen }: { onMore: () => void; onOpen: (id: string) => void }) {
   const items = [...listingsByChannel("竞价销售"), ...listingsByChannel("固定价销售")].slice(0, 8)
   return (
     <section className="mx-auto max-w-6xl px-6">
       <SectionTitle title="废钢出售" action={<ViewMoreLink onClick={onMore} />} />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
         {items.map((it) => (
-          <ScrapCard key={it.id} item={it} sale />
+          <ScrapCard key={it.id} item={it} sale onClick={() => onOpen(it.id)} />
         ))}
       </div>
       <ViewMoreButton label="查看更多废钢出售" onClick={onMore} />

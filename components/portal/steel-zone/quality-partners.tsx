@@ -11,7 +11,7 @@ import {
 } from "@/lib/steel-zone-data"
 
 /* ------------------------- 优质钢厂 ------------------------- */
-export function QualityMills({ onMore }: { onMore?: () => void }) {
+export function QualityMills({ onMore, onOpen }: { onMore?: () => void; onOpen?: (id: string) => void }) {
   return (
     <section className="mx-auto max-w-6xl px-6">
       <SectionTitle title="优质钢厂" action={onMore && <ViewMoreLink onClick={onMore} />} />
@@ -19,7 +19,11 @@ export function QualityMills({ onMore }: { onMore?: () => void }) {
         {qualityMills.map((m) => (
           <article
             key={m.id}
-            className="group flex gap-4 rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md"
+            onClick={onOpen && (() => onOpen(m.id))}
+            className={cn(
+              "group flex gap-4 rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md",
+              onOpen && "cursor-pointer",
+            )}
           >
             <img
               src={m.image || "/placeholder.svg"}
@@ -65,7 +69,7 @@ export function QualityMills({ onMore }: { onMore?: () => void }) {
 }
 
 /* ------------------------- 优选回收网点 ------------------------- */
-export function QualityNetworks({ onMore }: { onMore?: () => void }) {
+export function QualityNetworks({ onMore, onOpen }: { onMore?: () => void; onOpen?: (id: string) => void }) {
   return (
     <section className="mx-auto max-w-6xl px-6">
       <SectionTitle title="优选回收网点" action={onMore && <ViewMoreLink onClick={onMore} />} />
@@ -73,7 +77,11 @@ export function QualityNetworks({ onMore }: { onMore?: () => void }) {
         {qualityNetworks.map((n) => (
           <article
             key={n.id}
-            className="group flex gap-4 rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md"
+            onClick={onOpen && (() => onOpen(n.id))}
+            className={cn(
+              "group flex gap-4 rounded-xl border border-border bg-card p-3 transition-all hover:border-primary/50 hover:shadow-md",
+              onOpen && "cursor-pointer",
+            )}
           >
             <img
               src={n.image || "/placeholder.svg"}

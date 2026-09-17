@@ -20,6 +20,9 @@ import {
   TrendingUp,
   Award,
   PackageSearch,
+  ClipboardList,
+  Coins,
+  PackageCheck,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -35,55 +38,79 @@ import {
 import { statusStyle } from "./scrap-card"
 
 /* ============================ 交易流程 ============================ */
-type FlowConfig = { title: string; intro: string; steps: string[] }
+type FlowStep = { label: string; icon: LucideIcon }
 
-const CHANNEL_FLOWS: Record<string, FlowConfig> = {
-  竞价回收: {
-    title: "竞价回收流程",
-    intro: "面向平台认证供应商公开竞价，多方比价、价优者得，成交全程留痕，帮助钢厂锁定优质货源、优化采购成本。",
-    steps: ["发布竞价需求", "供应商报名", "在线实时竞价", "确定中标方", "签约结算交割"],
-  },
-  固定价回收: {
-    title: "固定价回收流程",
-    intro: "以一口价挂牌采购，供应商直接接单供货，流程简单、响应快速，适合规格稳定、长期稳定的回收采购场景。",
-    steps: ["发布固定价需求", "供应商接单", "确认采购订单", "收货验质", "签约结算交割"],
-  },
-  竞价销售: {
-    title: "竞价销售流程",
-    intro: "废钢货源公开挂牌竞价出售，多家意向购买方在线实时出价，价高者得，成交价格公开透明、全程可追溯。",
-    steps: ["发布竞价出售", "意向购买方报名", "在线实时竞价", "确定中标方", "签约结算交割"],
-  },
-  固定价销售: {
-    title: "固定价销售流程",
-    intro: "以一口价挂牌出售货源，意向购买方直接下单成交，流程高效便捷，适合规格明确、快速出货的销售场景。",
-    steps: ["发布固定价出售", "购买方下单", "确认销售订单", "发货验质", "签约结算交割"],
-  },
+const CN_NUM = ["一", "二", "三", "四", "五", "六", "七", "八"]
+
+// 竞价类完整流程（含报名与保证金环节）
+const AUCTION_FLOW: FlowStep[] = [
+  { label: "阅读公告", icon: ScrollText },
+  { label: "报名登记", icon: ClipboardList },
+  { label: "交保证金", icon: Wallet },
+  { label: "参与报价", icon: Gavel },
+  { label: "成交确认", icon: CheckCircle2 },
+  { label: "资金结算", icon: Coins },
+  { label: "办理交割", icon: PackageCheck },
+]
+
+// 固定价回收流程（一口价直接成交）
+const FIXED_RECYCLE_FLOW: FlowStep[] = [
+  { label: "阅读公告", icon: ScrollText },
+  { label: "确认标的", icon: ClipboardList },
+  { label: "提交订单", icon: CheckCircle2 },
+  { label: "资金结算", icon: Coins },
+  { label: "办理交割", icon: PackageCheck },
+]
+
+// 固定价销售流程
+const FIXED_SALE_FLOW: FlowStep[] = [
+  { label: "阅读公告", icon: ScrollText },
+  { label: "选购下单", icon: ClipboardList },
+  { label: "确认订单", icon: CheckCircle2 },
+  { label: "资金结算", icon: Coins },
+  { label: "办理交割", icon: PackageCheck },
+]
+
+const CHANNEL_FLOWS: Record<string, FlowStep[]> = {
+  竞价回收: AUCTION_FLOW,
+  竞价销售: AUCTION_FLOW,
+  固定价回收: FIXED_RECYCLE_FLOW,
+  固定价销售: FIXED_SALE_FLOW,
 }
 
-function ProcessFlow({ channel }: { channel: string }) {
-  const flow = CHANNEL_FLOWS[channel]
-  if (!flow) return null
+function ProcessFlow({ channel, className }: { channel: string; className?: string }) {
+  const steps = CHANNEL_FLOWS[channel]
+  if (!steps) return null
   return (
-    <section className="rounded-xl border border-border bg-card p-5">
-      <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-        <TrendingUp className="size-4 text-primary" />
-        {flow.title}
-      </h3>
-      <p className="text-[13px] leading-relaxed text-muted-foreground">{flow.intro}</p>
-      <ol className="mt-4 flex flex-wrap items-center gap-y-3">
-        {flow.steps.map((s, i) => (
-          <li key={s} className="flex items-center">
-            <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border">
-              <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-                {i + 1}
-              </span>
-              <span className="text-[13px] font-medium text-foreground">{s}</span>
-            </div>
-            {i < flow.steps.length - 1 && (
-              <ChevronRight className="mx-1 size-4 shrink-0 text-muted-foreground/50" />
-            )}
-          </li>
-        ))}
+    <section className={cn("rounded-xl border border-border bg-card px-4 py-5 sm:px-6", className)}>
+      <ol className="flex flex-wrap items-center justify-center gap-y-5 lg:flex-nowrap lg:justify-between">
+        {steps.map((s, i) => {
+          const Icon = s.icon
+          const active = i === 0
+          return (
+            <li key={s.label} className="flex items-center">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={cn(
+                    "flex size-10 shrink-0 items-center justify-center rounded-full",
+                    active ? "bg-destructive text-destructive-foreground" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  <Icon className="size-[18px]" />
+                </span>
+                <div className="leading-tight">
+                  <p className={cn("text-sm font-semibold", active ? "text-destructive" : "text-foreground")}>
+                    {s.label}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{`第${CN_NUM[i]}步`}</p>
+                </div>
+              </div>
+              {i < steps.length - 1 && (
+                <ChevronRight className="mx-2 size-5 shrink-0 text-muted-foreground/30 lg:mx-3" />
+              )}
+            </li>
+          )
+        })}
       </ol>
     </section>
   )
@@ -201,11 +228,8 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
     <div className="mx-auto max-w-6xl px-6 py-6">
       <Breadcrumb crumb={item.title} onBack={onBack} />
 
-      <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_360px]">
-        {/* 左：主体 */}
-        <div className="space-y-5">
-          {/* 图 + 标题 */}
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
+      {/* 图 + 标题 */}
+      <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card">
             <div className="relative">
               <img
                 src={scrapImage(item.category) || "/placeholder.svg"}
@@ -241,8 +265,15 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
                 <span className="text-muted-foreground/70">编号 {item.id}</span>
               </div>
             </div>
-          </div>
+      </div>
 
+      {/* 交易流程 —— 独立一行，置于图片之下 */}
+      <ProcessFlow channel={item.channel} className="mt-5" />
+
+      {/* 详情 + 面板 */}
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_360px]">
+        {/* 左：主体 */}
+        <div className="space-y-5">
           {/* 规格参数 */}
           <section className="rounded-xl border border-border bg-card p-5">
             <h3 className="mb-3 text-sm font-semibold text-foreground">标的参数</h3>
@@ -255,9 +286,6 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
               <InfoRow k={isBid ? "起拍单价" : "挂牌单价"} v={`${item.price.toLocaleString()} ${item.unit}`} />
             </dl>
           </section>
-
-          {/* 交易流程 */}
-          <ProcessFlow channel={item.channel} />
 
           {/* 竞价记录（仅竞价） */}
           {isBid && (

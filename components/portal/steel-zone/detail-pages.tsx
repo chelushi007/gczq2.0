@@ -106,11 +106,14 @@ function ServiceGuarantees() {
 /* ============================ 挂牌详情（竞价回收 / 固定价回收 / 废钢出售） ============================ */
 
 // 依据竞价热度合成报价记录（原型数据）
+// 竞价回收：出价方为供应商；竞价销售：出价方为意向购买方
 function bidRecords(item: Listing) {
   if (!item.bids) return []
+  const isSale = !item.channel.endsWith("回收")
+  const prefix = isSale ? "意向购买方" : "供应商"
   const n = Math.min(item.bids, 8)
   return Array.from({ length: n }, (_, i) => ({
-    bidder: `供应商${String.fromCharCode(65 + i)}**`,
+    bidder: `${prefix}${String.fromCharCode(65 + i)}**`,
     price: item.price + (item.bids! - i) * BID_STEP,
     ago: `${(i + 1) * 3} 分钟前`,
     top: i === 0,

@@ -109,7 +109,7 @@ export const demandRecos: DemandReco[] = [
   { id: "DS08", type: "sales", category: "heavy", province: "安徽", title: "马钢周边重废现货出售", price: 2540, unit: "元/吨", status: "询价中", spec: "重型统料", place: "安徽·马鞍山" },
   // —— 其余省份覆盖（保证地图悬停联动）——
   { id: "DR09", type: "purchase", category: "medium", province: "福建", title: "三钢闽光中型废钢采购", price: 2560, unit: "元/吨", status: "竞价中", spec: "中废统料", place: "福建·三明" },
-  { id: "DR10", type: "purchase", category: "heavy", province: "四川", title: "攀成钢重型废钢回收 月需 2000 ���", price: 2600, unit: "元/吨", status: "固定价", spec: "重型统料", place: "四川·成都" },
+  { id: "DR10", type: "purchase", category: "heavy", province: "四川", title: "攀成钢重型废钢回收 月需 2000 吨", price: 2600, unit: "元/吨", status: "固定价", spec: "重型统料", place: "四川·成都" },
   { id: "DS09", type: "sales", category: "heavy", province: "内蒙古", title: "包钢周边重废现货出售", price: 2520, unit: "元/吨", status: "竞价中", spec: "重型统料", place: "内蒙古·包头" },
   { id: "DR11", type: "purchase", category: "shear", province: "天津", title: "天钢剪切料采购 就近提货", price: 2700, unit: "元/吨", status: "竞价中", spec: "1.2m 剪切", place: "天津·东丽" },
   { id: "DR12", type: "purchase", category: "alloy", province: "上海", title: "宝钢合金钢边角料回收", price: 3480, unit: "元/吨", status: "询价中", spec: "低合金", place: "上海·宝山" },
@@ -244,8 +244,8 @@ export const listings: Listing[] = [
   { id: "B2608", title: "莱芜不锈钢废料竞价回收", category: "不锈钢", catKey: "stainless", channel: "竞价回收", price: 8300, unit: "元/吨", quantity: "200 吨", spec: "304 统料", region: "山东·济南", status: "竞价中", bids: 15, endsIn: "01:40:12", company: "山东钢铁" },
 
   // —— 固定价回收（8）——
-  { id: "F2611", title: "韶钢轻薄料固定价回收", category: "轻薄料", catKey: "light", channel: "固定价回收", price: 2380, unit: "元/吨", quantity: "800 吨", spec: "轻薄打包", region: "广东·韶��", status: "固定价", company: "宝武韶钢" },
-  { id: "F2612", title: "太钢生铁铸铁固定价回收", category: "生铁铸铁", catKey: "pig", channel: "固定价回收", price: 2900, unit: "元/吨", quantity: "1200 吨", spec: "机件生铁", region: "山西·太原", status: "固定价", company: "���钢集团" },
+  { id: "F2611", title: "韶钢轻薄料固定价回收", category: "轻薄料", catKey: "light", channel: "固定价回收", price: 2380, unit: "元/吨", quantity: "800 吨", spec: "轻薄打包", region: "广东·韶关", status: "固定价", company: "宝武韶钢" },
+  { id: "F2612", title: "太钢生铁铸铁固定价回收", category: "生铁铸铁", catKey: "pig", channel: "固定价回收", price: 2900, unit: "元/吨", quantity: "1200 吨", spec: "机件生铁", region: "山西·太原", status: "固定价", company: "太钢集团" },
   { id: "F2613", title: "安钢中废统料固定价回收", category: "中型废钢", catKey: "medium", channel: "固定价回收", price: 2560, unit: "元/吨", quantity: "1000 吨", spec: "中废混合", region: "河南·安阳", status: "固定价", company: "安阳钢铁" },
   { id: "F2614", title: "唐山重废统料固定价回收", category: "重型废钢", catKey: "heavy", channel: "固定价回收", price: 2620, unit: "元/吨", quantity: "1800 吨", spec: "重型统料", region: "河北·唐山", status: "固定价", company: "华东钢铁厂" },
   { id: "F2615", title: "无锡钢屑刨花固定价回收", category: "钢屑刨花", catKey: "turning", channel: "固定价回收", price: 1980, unit: "元/吨", quantity: "600 吨", spec: "压块屑", region: "江苏·无锡", status: "固定价", company: "锡钢再生" },
@@ -266,7 +266,7 @@ export const listings: Listing[] = [
   // —— 固定价销售（4）——
   { id: "G2631", title: "报废设备金属固定价销售", category: "中型废钢", catKey: "medium", channel: "固定价销售", price: 2450, unit: "元/吨", quantity: "400 吨", spec: "报废设备", region: "湖北·武汉", status: "固定价", company: "武钢集团" },
   { id: "G2632", title: "不锈钢边角料固定价销售", category: "不锈钢", catKey: "stainless", channel: "固定价销售", price: 8600, unit: "元/吨", quantity: "120 吨", spec: "304 边角", region: "广东·佛山", status: "固定价", company: "广东联钢" },
-  { id: "G2633", title: "钢屑压块固定价销售", category: "钢屑刨花", catKey: "turning", channel: "固定价销售", price: 1980, unit: "元/吨", quantity: "300 吨", spec: "压块屑", region: "浙江·宁波", status: "固定价", company: "宁波钢��" },
+  { id: "G2633", title: "钢屑压块固定价销售", category: "钢屑刨花", catKey: "turning", channel: "固定价销售", price: 1980, unit: "元/吨", quantity: "300 吨", spec: "压块屑", region: "浙江·宁波", status: "固定价", company: "宁波钢铁" },
   { id: "G2634", title: "铸造生铁固定价销售", category: "生铁铸铁", catKey: "pig", channel: "固定价销售", price: 2860, unit: "元/吨", quantity: "500 吨", spec: "铸造生铁", region: "湖南·湘潭", status: "固定价", company: "华菱湘钢" },
 ]
 

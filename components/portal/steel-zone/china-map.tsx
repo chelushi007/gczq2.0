@@ -230,7 +230,7 @@ export function ChinaMap({
                 onMouseEnter={() => onHover(name)}
                 onMouseLeave={() => onHover(null)}
               >
-                {/* 外发��光晕 · 体现密度 */}
+                {/* 外发光晕 · 体现密度 */}
                 <circle cx={cx} cy={cy} r={rr * 1.75} fill={fill} opacity={isHover ? 0.22 : 0.14} />
                 {/* 主气泡 */}
                 <circle

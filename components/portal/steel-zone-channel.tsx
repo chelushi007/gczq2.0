@@ -209,7 +209,7 @@ export function SteelZoneChannel({
       <BiddingHall onMore={() => go("opportunity")} onOpen={openListing} />
 
       {/* 5. 废钢采购 */}
-      <ScrapPurchase onMore={() => go("purchase")} onOpen={openListing} onPublish={onPublishDemand} />
+      <ScrapPurchase onMore={() => go("purchase")} onOpen={openListing} />
 
       {/* 6. 废钢出售 */}
       <ScrapSales onMore={() => go("sales")} onOpen={openListing} />
@@ -398,19 +398,12 @@ function Row({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
 }
 
 /* ------------------------- 废钢采购（分类联动 + 竞价回收 / 固定价回收 各两行八卡） ------------------------- */
-const BID_INTRO = "面向平台认证供应商公开竞价，多方比价、价优者得，成交全程留痕，帮助钢厂锁���优质货源、优化采购成本。"
-const BID_STEPS = ["发布竞价需求", "供应商报名", "在线实时竞价", "确定中标方", "签约结算交割"]
-const FIXED_INTRO = "以一口价挂牌采购，供应商直接接单供货，流程简单、响应快速，适合规格稳定、长期稳定的回收采购场景。"
-const FIXED_STEPS = ["发布固定价需求", "供应商接单", "确认采购订单", "收货验质", "签约结算交割"]
-
 function ScrapPurchase({
   onMore,
   onOpen,
-  onPublish,
 }: {
   onMore: () => void
   onOpen: (id: string) => void
-  onPublish?: (method: "bidding" | "fixed") => void
 }) {
   const [cat, setCat] = useState("all")
   const inCat = (l: Listing) => cat === "all" || l.catKey === cat
@@ -441,27 +434,8 @@ function ScrapPurchase({
         }
       />
 
-      <PurchaseGroup
-        label="竞价回收"
-        icon={Gavel}
-        items={bidItems}
-        onOpen={onOpen}
-        intro={BID_INTRO}
-        steps={BID_STEPS}
-        publishLabel="发布竞价需求"
-        onPublish={onPublish && (() => onPublish("bidding"))}
-      />
-      <PurchaseGroup
-        label="固定价回收"
-        icon={Scale}
-        items={fixedItems}
-        className="mt-8"
-        onOpen={onOpen}
-        intro={FIXED_INTRO}
-        steps={FIXED_STEPS}
-        publishLabel="发布固定价需求"
-        onPublish={onPublish && (() => onPublish("fixed"))}
-      />
+      <PurchaseGroup label="竞价回收" icon={Gavel} items={bidItems} onOpen={onOpen} />
+      <PurchaseGroup label="固定价回收" icon={Scale} items={fixedItems} className="mt-8" onOpen={onOpen} />
       <ViewMoreButton label="查看更多废钢采购" onClick={onMore} />
     </section>
   )
@@ -473,20 +447,12 @@ function PurchaseGroup({
   items,
   className,
   onOpen,
-  intro,
-  steps,
-  publishLabel,
-  onPublish,
 }: {
   label: string
   icon: LucideIcon
   items: Listing[]
   className?: string
   onOpen: (id: string) => void
-  intro?: string
-  steps?: string[]
-  publishLabel?: string
-  onPublish?: () => void
 }) {
   return (
     <div className={className}>
@@ -494,37 +460,6 @@ function PurchaseGroup({
         <Icon className="size-4 text-primary" />
         <h3 className="text-sm font-semibold text-foreground">{label}</h3>
       </div>
-
-      {/* 流程展示 + 介绍 + 发布需求入口 */}
-      {intro && steps && (
-        <div className="mb-4 flex flex-col gap-4 rounded-xl border border-border bg-muted/30 p-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] leading-relaxed text-muted-foreground">{intro}</p>
-            <ol className="mt-3 flex flex-wrap items-center gap-y-2">
-              {steps.map((s, i) => (
-                <li key={s} className="flex items-center">
-                  <span className="flex items-center gap-1.5 rounded-full bg-card px-2.5 py-1 text-xs text-foreground ring-1 ring-border">
-                    <span className="flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                      {i + 1}
-                    </span>
-                    {s}
-                  </span>
-                  {i < steps.length - 1 && <ArrowRight className="mx-1 size-3.5 shrink-0 text-muted-foreground/50" />}
-                </li>
-              ))}
-            </ol>
-          </div>
-          {onPublish && (
-            <button
-              onClick={onPublish}
-              className="flex shrink-0 items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              <Megaphone className="size-4" />
-              {publishLabel}
-            </button>
-          )}
-        </div>
-      )}
 
       {items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card py-10 text-center text-sm text-muted-foreground">

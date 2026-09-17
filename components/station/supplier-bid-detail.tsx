@@ -22,14 +22,14 @@ import { Modal } from "@/components/shared/modal"
 import { BiddingHall } from "@/components/station/bidding-hall"
 import type { SupplierBidItem } from "@/lib/steel-data"
 
-// 供应商参与竞价的流程：报名参与 → 缴费缴金 → 在线竞价 → 中标结算
+  // 供应商参与竞价的流程：报名参与 → 缴费缴金 → 在线竞价 → 竞价结果
 type StageKey = "join" | "pay" | "bid" | "win"
 
 const stages: { key: StageKey; label: string; icon: typeof FileText }[] = [
   { key: "join", label: "报名参与", icon: ClipboardCheck },
   { key: "pay", label: "缴费缴金", icon: Wallet },
   { key: "bid", label: "在线竞价", icon: Gavel },
-  { key: "win", label: "中标结算", icon: Trophy },
+  { key: "win", label: "竞价结果", icon: Trophy },
 ]
 
 const stageStatusMeta: Record<"done" | "active" | "todo", { label: string; cls: string }> = {

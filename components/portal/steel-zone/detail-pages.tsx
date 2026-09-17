@@ -34,6 +34,61 @@ import {
 } from "@/lib/steel-zone-data"
 import { statusStyle } from "./scrap-card"
 
+/* ============================ 交易流程 ============================ */
+type FlowConfig = { title: string; intro: string; steps: string[] }
+
+const CHANNEL_FLOWS: Record<string, FlowConfig> = {
+  竞价回收: {
+    title: "竞价回收流程",
+    intro: "面向平台认证供应商公开竞价，多方比价、价优者得，成交全程留痕，帮助钢厂锁定优质货源、优化采购成本。",
+    steps: ["发布竞价需求", "供应商报名", "在线实时竞价", "确定中标方", "签约结算交割"],
+  },
+  固定价回收: {
+    title: "固定价回收流程",
+    intro: "以一口价挂牌采购，供应商直接接单供货，流程简单、响应快速，适合规格稳定、长期稳定的回收采购场景。",
+    steps: ["发布固定价需求", "供应商接单", "确认采购订单", "收货验质", "签约结算交割"],
+  },
+  竞价销售: {
+    title: "竞价销售流程",
+    intro: "废钢货源公开挂牌竞价出售，多家意向购买方在线实时出价，价高者得，成交价格公开透明、全程可追溯。",
+    steps: ["发布竞价出售", "意向购买方报名", "在线实时竞价", "确定中标方", "签约结算交割"],
+  },
+  固定价销售: {
+    title: "固定价销售流程",
+    intro: "以一口价挂牌出售货源，意向购买方直接下单成交，流程高效便捷，适合规格明确、快速出货的销售场景。",
+    steps: ["发布固定价出售", "购买方下单", "确认销售订单", "发货验质", "签约结算交割"],
+  },
+}
+
+function ProcessFlow({ channel }: { channel: string }) {
+  const flow = CHANNEL_FLOWS[channel]
+  if (!flow) return null
+  return (
+    <section className="rounded-xl border border-border bg-card p-5">
+      <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+        <TrendingUp className="size-4 text-primary" />
+        {flow.title}
+      </h3>
+      <p className="text-[13px] leading-relaxed text-muted-foreground">{flow.intro}</p>
+      <ol className="mt-4 flex flex-wrap items-center gap-y-3">
+        {flow.steps.map((s, i) => (
+          <li key={s} className="flex items-center">
+            <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 ring-1 ring-border">
+              <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+                {i + 1}
+              </span>
+              <span className="text-[13px] font-medium text-foreground">{s}</span>
+            </div>
+            {i < flow.steps.length - 1 && (
+              <ChevronRight className="mx-1 size-4 shrink-0 text-muted-foreground/50" />
+            )}
+          </li>
+        ))}
+      </ol>
+    </section>
+  )
+}
+
 /* ============================ 通用外壳 ============================ */
 function Breadcrumb({ crumb, onBack }: { crumb: string; onBack: () => void }) {
   return (
@@ -200,6 +255,9 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
               <InfoRow k={isBid ? "起拍单价" : "挂牌单价"} v={`${item.price.toLocaleString()} ${item.unit}`} />
             </dl>
           </section>
+
+          {/* 交易流程 */}
+          <ProcessFlow channel={item.channel} />
 
           {/* 竞价记录（仅竞价） */}
           {isBid && (

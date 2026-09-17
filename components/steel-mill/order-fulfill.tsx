@@ -190,10 +190,7 @@ export function OrderFulfill({
                 {i < nodes.length - 1 &&
                   (nodes[i + 1].group === node.group ? (
                     // 同分组：顺序可互换，以双向箭头连接
-                    <div className="mx-1 flex shrink-0 flex-col items-center gap-0.5">
-                      <ArrowLeftRight className="size-4 text-primary" />
-                      <span className="whitespace-nowrap text-[10px] font-medium text-primary">顺序可互换</span>
-                    </div>
+                    <ArrowLeftRight className="mx-1 h-5 w-10 shrink-0 text-primary sm:w-16" />
                   ) : (
                     <div
                       className={cn(
@@ -637,7 +634,7 @@ function PaymentPanel({
   const [fileName, setFileName] = useState("")
   const paid = Math.round(amountNum * 0.4)
   const due = amountNum - paid
-  const cycle = item.channel === "协议" ? "按月" : "一次性"
+  const cycle = item.channel === "协��" ? "按月" : "一次性"
   const payer = "华东特钢集团"
 
   const history = [

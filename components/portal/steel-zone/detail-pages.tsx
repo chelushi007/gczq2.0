@@ -35,7 +35,7 @@ import {
   BID_STEP,
   type Listing,
 } from "@/lib/steel-zone-data"
-import { statusStyle } from "./scrap-card"
+import { statusStyle, ScrapCard } from "./scrap-card"
 
 /* ============================ 交易流程 ============================ */
 type FlowStep = { label: string; icon: LucideIcon }
@@ -202,9 +202,26 @@ function bidRecords(item: Listing) {
   }))
 }
 
-export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => void }) {
+export function ListingDetailPage({
+  id,
+  onBack,
+  onOpen,
+}: {
+  id: string
+  onBack: () => void
+  onOpen?: (id: string) => void
+}) {
   const item = listings.find((l) => l.id === id)
   if (!item) return <NotFound onBack={onBack} />
+
+  // 猜你喜欢：同品类优先，其次同渠道，排除自身
+  const recommended = [
+    ...listings.filter((l) => l.id !== item.id && l.category === item.category),
+    ...listings.filter((l) => l.id !== item.id && l.category !== item.category && l.channel === item.channel),
+    ...listings.filter((l) => l.id !== item.id),
+  ]
+    .filter((l, i, arr) => arr.findIndex((x) => x.id === l.id) === i)
+    .slice(0, 4)
 
   const isBid = item.channel.startsWith("竞价")
   const isRecycle = item.channel.endsWith("回收")
@@ -228,10 +245,10 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
     <div className="mx-auto max-w-6xl px-6 py-6">
       <Breadcrumb crumb={item.title} onBack={onBack} />
 
-      {/* 图片 + 报价信息 同行 */}
-      <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_360px] lg:items-start">
+      {/* 图片 + 报价信息 同行（等高） */}
+      <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_360px] lg:items-stretch">
         {/* 左：图 + 标题 */}
-        <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <div className="flex flex-col overflow-hidden rounded-xl border border-border bg-card">
             <div className="relative">
               <img
                 src={scrapImage(item.category) || "/placeholder.svg"}
@@ -269,10 +286,9 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
             </div>
         </div>
 
-        {/* 右：报价信息 */}
-        <aside className="lg:self-start">
-          <div className="space-y-4">
-            <div className="rounded-xl border border-border bg-card p-5">
+        {/* 右：报价信息（与左侧图片模块等高） */}
+        <aside className="flex">
+          <div className="flex w-full flex-col rounded-xl border border-border bg-card p-5">
               {isBid ? (
                 <>
                   <p className="text-xs text-muted-foreground">{live ? "当前最高报价" : "起拍单价"}</p>
@@ -316,7 +332,7 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
               <button
                 disabled={isBid && !live}
                 className={cn(
-                  "mt-4 w-full rounded-md py-2.5 text-sm font-medium transition-colors",
+                  "mt-auto w-full rounded-md py-2.5 text-sm font-medium transition-colors",
                   isBid && !live
                     ? "cursor-not-allowed bg-muted text-muted-foreground"
                     : "bg-primary text-primary-foreground hover:bg-primary/90",
@@ -334,24 +350,6 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
                   电话联系
                 </button>
               </div>
-            </div>
-
-            {/* 发布企业 */}
-            <div className="rounded-xl border border-border bg-card p-5">
-              <h3 className="mb-3 text-sm font-semibold text-foreground">发布企业</h3>
-              <div className="flex items-center gap-3">
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <Building2 className="size-5" />
-                </span>
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1 truncate text-sm font-medium text-foreground">
-                    {item.company}
-                    <ShieldCheck className="size-3.5 shrink-0 text-primary" />
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">{item.region} · 平台认证企业</p>
-                </div>
-              </div>
-            </div>
           </div>
         </aside>
       </div>
@@ -359,8 +357,10 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
       {/* 交易流程 —— 独立一行，置于图片之下 */}
       <ProcessFlow channel={item.channel} className="mt-5" />
 
-      {/* 详情（全宽） */}
-      <div className="mt-5 space-y-5">
+      {/* 详情 + 右侧栏 */}
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_360px] lg:items-start">
+        {/* 左：详情主体 */}
+        <div className="space-y-5">
           {/* 规格参数 */}
           <section className="rounded-xl border border-border bg-card p-5">
             <h3 className="mb-3 text-sm font-semibold text-foreground">标的参数</h3>
@@ -424,7 +424,52 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
             </ul>
           </section>
 
-        <ServiceGuarantees />
+          <ServiceGuarantees />
+        </div>
+
+        {/* 右：发布企业 + 猜你喜欢 */}
+        <aside className="space-y-5">
+          {/* 发布企业 */}
+          <div className="rounded-xl border border-border bg-card p-5">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">发布企业</h3>
+            <div className="flex items-center gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Building2 className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="flex items-center gap-1 truncate text-sm font-medium text-foreground">
+                  {item.company}
+                  <ShieldCheck className="size-3.5 shrink-0 text-primary" />
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{item.region} · 平台认证企业</p>
+              </div>
+            </div>
+            <button className="mt-3 flex w-full items-center justify-center gap-1 rounded-md border border-border py-2 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary">
+              进入店铺
+              <ChevronRight className="size-3.5" />
+            </button>
+          </div>
+
+          {/* 猜你喜欢 */}
+          {recommended.length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-5">
+              <h3 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <TrendingUp className="size-4 text-primary" />
+                猜你喜欢
+              </h3>
+              <div className="space-y-4">
+                {recommended.map((rec) => (
+                  <ScrapCard
+                    key={rec.id}
+                    item={rec}
+                    sale={rec.channel.endsWith("销售")}
+                    onClick={onOpen && (() => onOpen(rec.id))}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   )

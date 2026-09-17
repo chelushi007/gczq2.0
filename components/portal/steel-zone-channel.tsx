@@ -123,7 +123,7 @@ export function SteelZoneChannel({
 
       {detail ? (
         detail.type === "listing" ? (
-          <ListingDetailPage id={detail.id} onBack={closeDetail} />
+          <ListingDetailPage id={detail.id} onBack={closeDetail} onOpen={openListing} />
         ) : detail.type === "mill" ? (
           <MillDetailPage id={detail.id} onBack={closeDetail} />
         ) : (
@@ -398,7 +398,7 @@ function Row({ k, v, strong }: { k: string; v: string; strong?: boolean }) {
 }
 
 /* ------------------------- 废钢采购（分类联动 + 竞价回收 / 固定价回收 各两行八卡） ------------------------- */
-const BID_INTRO = "面向平台认证供应商公开竞价，多方比价、价优者得，成交全程留痕，帮助钢厂锁定优质货源、优化采购成本。"
+const BID_INTRO = "面向平台认证供应商公开竞价，多方比价、价优者得，成交全程留痕，帮助钢厂锁���优质货源、优化采购成本。"
 const BID_STEPS = ["发布竞价需求", "供应商报名", "在线实时竞价", "确定中标方", "签约结算交割"]
 const FIXED_INTRO = "以一口价挂牌采购，供应商直接接单供货，流程简单、响应快速，适合规格稳定、长期稳定的回收采购场景。"
 const FIXED_STEPS = ["发布固定价需求", "供应商接单", "确认采购订单", "收货验质", "签约结算交割"]

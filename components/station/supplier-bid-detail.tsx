@@ -32,6 +32,12 @@ const stages: { key: StageKey; label: string; icon: typeof FileText }[] = [
   { key: "win", label: "中标结算", icon: Trophy },
 ]
 
+const stageStatusMeta: Record<"done" | "active" | "todo", { label: string; cls: string }> = {
+  done: { label: "已完成", cls: "bg-emerald-50 text-emerald-600 ring-emerald-200" },
+  active: { label: "进行中", cls: "bg-primary/10 text-primary ring-primary/30" },
+  todo: { label: "待处理", cls: "bg-muted text-muted-foreground ring-border" },
+}
+
 function stageState(item: SupplierBidItem, key: StageKey): "done" | "active" | "todo" {
   const signedUp = item.signupStatus === "报名通过"
   const paid = item.feeStatus === "已缴" && item.depositStatus !== "未缴"
@@ -131,6 +137,13 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
                   >
                     {st.label}
                     <ChevronDown className={"size-3 transition-transform " + (open === st.key ? "rotate-180" : "")} />
+                  </span>
+                  <span
+                    className={
+                      "rounded px-1.5 py-px text-[10px] font-medium leading-tight ring-1 " + stageStatusMeta[state].cls
+                    }
+                  >
+                    {stageStatusMeta[state].label}
                   </span>
                 </button>
                 {i < stages.length - 1 && (

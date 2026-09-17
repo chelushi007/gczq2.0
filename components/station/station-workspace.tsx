@@ -159,7 +159,7 @@ function MyBiddingContent({ onOpen }: { onOpen: (i: SupplierBidItem) => void }) 
     { key: "bidEnd", header: "竞价结束", className: "whitespace-nowrap tabular-nums text-muted-foreground" },
     {
       key: "result",
-      header: "竞价结果",
+      header: "状态",
       className: "whitespace-nowrap",
       render: (r) => <StatusPill tone={supplierBidResultTone[r.result]}>{r.result}</StatusPill>,
     },
@@ -167,12 +167,15 @@ function MyBiddingContent({ onOpen }: { onOpen: (i: SupplierBidItem) => void }) 
       key: "op",
       header: "操作",
       className: "whitespace-nowrap",
-      render: (r) => (
-        <Button size="sm" onClick={() => onOpen(r)}>
-          <FileSearch />
-          {r.result === "竞价中" ? "进入竞价" : "查看详情"}
-        </Button>
-      ),
+      render: (r) => {
+        const managing = r.result === "报名中" || r.result === "竞价中" || r.result === "待开标"
+        return (
+          <Button size="sm" onClick={() => onOpen(r)}>
+            <FileSearch />
+            {managing ? "管理竞价" : "查看详情"}
+          </Button>
+        )
+      },
     },
   ]
 

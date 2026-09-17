@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Send, CheckCircle2, Ban, X, Building2 } from "lucide-react"
+import { Send, CheckCircle2, Ban, X, Building2, Unlink, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusPill, statusTone } from "@/components/shared/status-pill"
@@ -14,6 +14,7 @@ const tabs = ["全部", "合作中", "待审核", "已邀请", "已停用"]
 export function MillSuppliers() {
   const [tab, setTab] = useState("全部")
   const [invite, setInvite] = useState(false)
+  const [unbind, setUnbind] = useState<CoopBase | null>(null)
   const rows = tab === "全部" ? coopBaseList : coopBaseList.filter((b) => b.status === tab)
 
   const columns: Column<CoopBase>[] = [
@@ -48,6 +49,21 @@ export function MillSuppliers() {
           <Button variant="ghost" size="sm">
             撤回邀请
           </Button>
+        ) : r.status === "合作中" ? (
+          <div className="flex gap-1.5">
+            <Button variant="ghost" size="sm">
+              详情
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              onClick={() => setUnbind(r)}
+            >
+              <Unlink />
+              解绑
+            </Button>
+          </div>
         ) : (
           <Button variant="ghost" size="sm">
             {r.status === "已停用" ? <Ban /> : null}
@@ -97,7 +113,69 @@ export function MillSuppliers() {
       <DataTable columns={columns} rows={rows} rowKey={(r) => r.id} />
 
       {invite && <InviteBaseModal onClose={() => setInvite(false)} />}
+      {unbind && <UnbindModal base={unbind} onClose={() => setUnbind(null)} />}
     </div>
+  )
+}
+
+function UnbindModal({ base, onClose }: { base: CoopBase; onClose: () => void }) {
+  const [done, setDone] = useState(false)
+  return (
+    <Modal open onClose={onClose} size="md" title={done ? "已解除合作" : "解除合作"}>
+      {done ? (
+        <div className="flex flex-col items-center px-2 py-8 text-center">
+          <div className="flex size-14 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <CheckCircle2 className="size-7" />
+          </div>
+          <h3 className="mt-4 text-base font-semibold text-foreground">已解除与「{base.name}」的合作</h3>
+          <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+            该回收基地已从合作名录移除，后续将不再向其派单。如需恢复，可重新发起邀请。
+          </p>
+          <Button className="mt-6" onClick={onClose}>
+            完成
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-destructive/10 text-destructive">
+              <AlertTriangle className="size-4.5" />
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              解绑后将解除与该回收基地的合作关系，停止向其派单，协议定价与优先权限同步失效。进行中的订单不受影响。
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/40 p-4">
+            <div className="flex items-center gap-2">
+              <div className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Building2 className="size-4.5" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">{base.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {base.region} · {base.supplyCategory} · 累计供货 {base.totalQty}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-border pt-4">
+            <Button variant="ghost" onClick={onClose}>
+              <X />
+              取消
+            </Button>
+            <Button
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => setDone(true)}
+            >
+              <Unlink />
+              确认解绑
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   )
 }
 

@@ -714,18 +714,22 @@ export const millInviteList: MillInvite[] = [
   { id: "IV004", millName: "沙钢集团", region: "江苏·张家港", category: "重废", settlement: "一票制月结", message: "邀请贵基地成为我方重废定点供应基地。", invitedAt: "2026-08-20", status: "已拒绝" },
 ]
 
-// 回收基地主动提交的合作申请
-export interface CoopApplication {
+  // 回收基地已建立合作 / 合作中的钢厂
+export interface CoopMill {
   id: string
   millName: string
+  region: string
   category: string
-  appliedAt: string
-  status: "审核中" | "已通过" | "已驳回"
-  note: string
-}
-
-export const coopApplicationList: CoopApplication[] = [
-  { id: "AP001", millName: "华东特钢集团", category: "重废 / 统废", appliedAt: "2026-09-02", status: "已通过", note: "已建立协议合作，等级：协议基地" },
-  { id: "AP002", millName: "马钢股份", category: "统废", appliedAt: "2026-09-06", status: "审核中", note: "资质材料审核中，预计 3 个工作日反馈" },
-  { id: "AP003", millName: "南钢联合", category: "生铁", appliedAt: "2026-08-30", status: "已驳回", note: "供货类别暂不匹配，建议补充重废品类后重新申请" },
-]
+  cooperation: "协议基地" | "普通基地"
+  settlement: string
+  totalQty: string
+  joinedAt: string
+  status: "合作中" | "审核中" | "已驳回"
+  }
+  
+export const coopMillList: CoopMill[] = [
+  { id: "CM001", millName: "华东特钢集团", region: "江苏·苏州", category: "重废 / 统废", cooperation: "协议基地", settlement: "月结 · 电子合同", totalQty: "12,800 吨", joinedAt: "2026-03-15", status: "合作中" },
+  { id: "CM002", millName: "宝武再生资源", region: "上海·宝山", category: "统废", cooperation: "协议基地", settlement: "协议月结", totalQty: "9,600 吨", joinedAt: "2026-05-10", status: "合作中" },
+  { id: "CM003", millName: "南钢联合", region: "江苏·南京", category: "生铁", cooperation: "普通基地", settlement: "一票制月结", totalQty: "2,100 吨", joinedAt: "2026-07-02", status: "合作中" },
+  { id: "CM004", millName: "马钢股份", region: "安徽·马鞍山", category: "统废", cooperation: "普通基地", settlement: "货到结算", totalQty: "—", joinedAt: "2026-09-06", status: "审核中" },
+  ]

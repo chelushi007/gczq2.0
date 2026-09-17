@@ -228,8 +228,10 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
     <div className="mx-auto max-w-6xl px-6 py-6">
       <Breadcrumb crumb={item.title} onBack={onBack} />
 
-      {/* 图 + 标题 */}
-      <div className="mt-4 overflow-hidden rounded-xl border border-border bg-card">
+      {/* 图片 + 报价信息 同行 */}
+      <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_360px] lg:items-start">
+        {/* 左：图 + 标题 */}
+        <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="relative">
               <img
                 src={scrapImage(item.category) || "/placeholder.svg"}
@@ -265,83 +267,10 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
                 <span className="text-muted-foreground/70">编号 {item.id}</span>
               </div>
             </div>
-      </div>
-
-      {/* 交易流程 —— 独立一行，置于图片之下 */}
-      <ProcessFlow channel={item.channel} className="mt-5" />
-
-      {/* 详情 + 面板 */}
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_360px]">
-        {/* 左：主体 */}
-        <div className="space-y-5">
-          {/* 规格参数 */}
-          <section className="rounded-xl border border-border bg-card p-5">
-            <h3 className="mb-3 text-sm font-semibold text-foreground">标的参数</h3>
-            <dl className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
-              <InfoRow k="废钢品类" v={item.category} />
-              <InfoRow k="规格要求" v={item.spec} />
-              <InfoRow k="交易数量" v={item.quantity} />
-              <InfoRow k="交易方式" v={item.channel} />
-              <InfoRow k="所在地区" v={item.region} />
-              <InfoRow k={isBid ? "起拍单价" : "挂牌单价"} v={`${item.price.toLocaleString()} ${item.unit}`} />
-            </dl>
-          </section>
-
-          {/* 竞价记录（仅竞价） */}
-          {isBid && (
-            <section className="overflow-hidden rounded-xl border border-border bg-card">
-              <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <h3 className="text-sm font-semibold text-foreground">实时报价记录</h3>
-                <span className="text-xs text-muted-foreground">共 {item.bids ?? 0} 次报价</span>
-              </div>
-              {records.length === 0 ? (
-                <p className="px-5 py-8 text-center text-sm text-muted-foreground">竞价尚未开始，暂无报价</p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {records.map((r, i) => (
-                    <li key={i} className="flex items-center justify-between px-5 py-2.5 text-sm">
-                      <span className="flex items-center gap-2 text-foreground">
-                        {r.top ? (
-                          <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
-                            最高
-                          </span>
-                        ) : (
-                          <span className="w-8 text-center text-xs text-muted-foreground">{i + 1}</span>
-                        )}
-                        {r.bidder}
-                      </span>
-                      <span className="flex items-center gap-4">
-                        <span className={cn("font-semibold tabular-nums", r.top ? "text-primary" : "text-foreground")}>
-                          {r.price.toLocaleString()}
-                        </span>
-                        <span className="w-16 text-right text-[11px] text-muted-foreground">{r.ago}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          )}
-
-          {/* 交易说明 */}
-          <section className="rounded-xl border border-border bg-card p-5">
-            <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
-              <ScrollText className="size-4 text-primary" />
-              交易说明
-            </h3>
-            <ul className="space-y-1.5 text-[13px] leading-relaxed text-muted-foreground">
-              <li>· 本标的以磅计验质为准，杂质、水分按合同约定在线扣杂。</li>
-              <li>· {isBid ? "竞价阶梯为每次加价的最小幅度，出价即视为认可挂牌条款。" : "固定价挂牌，接单/下单后按挂牌单价结算。"}</li>
-              <li>· 支持第三方验质与争议复核，运输可就近调度、全程轨迹可视。</li>
-              <li>· 货款通过平台资金存管，签订电子合同后按约结算。</li>
-            </ul>
-          </section>
-
-          <ServiceGuarantees />
         </div>
 
-        {/* 右：交易面板 */}
-        <aside className="lg:sticky lg:top-20 lg:self-start">
+        {/* 右：报价信息 */}
+        <aside className="lg:self-start">
           <div className="space-y-4">
             <div className="rounded-xl border border-border bg-card p-5">
               {isBid ? (
@@ -425,6 +354,77 @@ export function ListingDetailPage({ id, onBack }: { id: string; onBack: () => vo
             </div>
           </div>
         </aside>
+      </div>
+
+      {/* 交易流程 —— 独立一行，置于图片之下 */}
+      <ProcessFlow channel={item.channel} className="mt-5" />
+
+      {/* 详情（全宽） */}
+      <div className="mt-5 space-y-5">
+          {/* 规格参数 */}
+          <section className="rounded-xl border border-border bg-card p-5">
+            <h3 className="mb-3 text-sm font-semibold text-foreground">标的参数</h3>
+            <dl className="grid grid-cols-1 gap-x-8 sm:grid-cols-2">
+              <InfoRow k="废钢品类" v={item.category} />
+              <InfoRow k="规格要求" v={item.spec} />
+              <InfoRow k="交易数量" v={item.quantity} />
+              <InfoRow k="交易方式" v={item.channel} />
+              <InfoRow k="所在地区" v={item.region} />
+              <InfoRow k={isBid ? "起拍单价" : "挂牌单价"} v={`${item.price.toLocaleString()} ${item.unit}`} />
+            </dl>
+          </section>
+
+          {/* 竞价记录（仅竞价） */}
+          {isBid && (
+            <section className="overflow-hidden rounded-xl border border-border bg-card">
+              <div className="flex items-center justify-between border-b border-border px-5 py-3">
+                <h3 className="text-sm font-semibold text-foreground">实时报价记录</h3>
+                <span className="text-xs text-muted-foreground">共 {item.bids ?? 0} 次报价</span>
+              </div>
+              {records.length === 0 ? (
+                <p className="px-5 py-8 text-center text-sm text-muted-foreground">竞价尚未开始，暂无报价</p>
+              ) : (
+                <ul className="divide-y divide-border">
+                  {records.map((r, i) => (
+                    <li key={i} className="flex items-center justify-between px-5 py-2.5 text-sm">
+                      <span className="flex items-center gap-2 text-foreground">
+                        {r.top ? (
+                          <span className="rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                            最高
+                          </span>
+                        ) : (
+                          <span className="w-8 text-center text-xs text-muted-foreground">{i + 1}</span>
+                        )}
+                        {r.bidder}
+                      </span>
+                      <span className="flex items-center gap-4">
+                        <span className={cn("font-semibold tabular-nums", r.top ? "text-primary" : "text-foreground")}>
+                          {r.price.toLocaleString()}
+                        </span>
+                        <span className="w-16 text-right text-[11px] text-muted-foreground">{r.ago}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {/* 交易说明 */}
+          <section className="rounded-xl border border-border bg-card p-5">
+            <h3 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-foreground">
+              <ScrollText className="size-4 text-primary" />
+              交易说明
+            </h3>
+            <ul className="space-y-1.5 text-[13px] leading-relaxed text-muted-foreground">
+              <li>· 本标的以磅计验质为准，杂质、水分按合同约定在线扣杂。</li>
+              <li>· {isBid ? "竞价阶梯为每次加价的最小幅度，出价即视为认可挂牌条款。" : "固定价挂牌，接单/下单后按挂牌单价结算。"}</li>
+              <li>· 支持第三方验质与争议复核，运输可就近调度、全程轨迹可视。</li>
+              <li>· 货款通过平台资金存管，签订电子合同后按约结算。</li>
+            </ul>
+          </section>
+
+        <ServiceGuarantees />
       </div>
     </div>
   )

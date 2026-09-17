@@ -486,6 +486,7 @@ export interface OrderItem {
   }
   
   export const orderList: OrderItem[] = [
+  { id: "DD20260908-021", supplier: "金鼎再生资源", channel: "固定价", category: "重废", qty: "260 吨", unitPrice: "¥2,680/吨", amount: "¥696,800", region: "江苏·无锡", status: "履约中", createdAt: "2026-09-08", deliveryDate: "2026-09-16" },
   { id: "DD20260907-013", supplier: "华东再生资源", channel: "竞价", category: "重废", qty: "500 吨", unitPrice: "¥2,650/吨", amount: "¥1,325,000", region: "江苏·苏州", status: "履约中", createdAt: "2026-09-07", deliveryDate: "2026-09-15" },
   { id: "DD20260906-010", supplier: "城南再生资源回收站", channel: "协议", category: "统废", qty: "820 吨", unitPrice: "¥2,405/吨", amount: null, region: "江苏·苏州", status: "履约中", createdAt: "2026-09-06", deliveryDate: "2026-09-30" },
   { id: "DD20260905-007", supplier: "盛通金属有限公司", channel: "固定价", category: "生铁", qty: "400 吨", unitPrice: "¥2,950/吨", amount: "¥1,180,000", region: "上海·宝山", status: "履约结束", createdAt: "2026-09-05", deliveryDate: "2026-09-10" },

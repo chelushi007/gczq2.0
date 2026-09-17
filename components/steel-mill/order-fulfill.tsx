@@ -11,6 +11,7 @@ import {
   Clock,
   Circle,
   ScrollText,
+  ArrowLeftRight,
   Plus,
   Upload,
   CreditCard,
@@ -31,6 +32,10 @@ interface NodeDef {
   id: string
   title: string
   icon: typeof FileSignature
+  // 同一 group 内的节点顺序可互换，节点之间以双向箭头连接
+  group: number
+  // 非必须节点（如对账），可跳过，不阻塞后续节点
+  optional?: boolean
 }
 
 const stateMeta: Record<NodeState, { label: string; Icon: typeof Clock }> = {
@@ -51,16 +56,16 @@ function money(n: number) {
 
 const nodeDefs: Record<FulfillPerspective, NodeDef[]> = {
   purchaser: [
-    { id: "contract", title: "合同签署", icon: FileSignature },
-    { id: "reconcile", title: "发起对账", icon: ScrollText },
-    { id: "payment", title: "货款支付", icon: Wallet },
-    { id: "receipt", title: "确认收货", icon: PackageCheck },
+    { id: "contract", title: "合同签署", icon: FileSignature, group: 0 },
+    { id: "reconcile", title: "发起对账", icon: ScrollText, group: 1, optional: true },
+    { id: "payment", title: "货款支付", icon: Wallet, group: 2 },
+    { id: "receipt", title: "确认收货", icon: PackageCheck, group: 2 },
   ],
   supplier: [
-    { id: "contract", title: "合同签署", icon: FileSignature },
-    { id: "reconcile", title: "确认对账", icon: ScrollText },
-    { id: "collection", title: "货款收取", icon: Wallet },
-    { id: "ship", title: "发货", icon: Truck },
+    { id: "contract", title: "合同签署", icon: FileSignature, group: 0 },
+    { id: "reconcile", title: "确认对账", icon: ScrollText, group: 1, optional: true },
+    { id: "collection", title: "货款收取", icon: Wallet, group: 2 },
+    { id: "ship", title: "发货", icon: Truck, group: 2 },
   ],
 }
 
@@ -79,9 +84,14 @@ export function OrderFulfill({
 
   const nodes = defs.map((d) => {
     let state: NodeState
-    if (done.has(d.id)) state = "done"
-    else if (defs.findIndex((x) => !done.has(x.id)) === defs.indexOf(d)) state = "active"
-    else state = "todo"
+    if (done.has(d.id)) {
+      state = "done"
+    } else {
+      // 仅当更早分组中的「必须」节点均已完成时，该节点方可办理
+      // 非必须节点（对账）不阻塞后续；同分组节点可任意先后办理
+      const blocked = defs.some((x) => x.group < d.group && !x.optional && !done.has(x.id))
+      state = blocked ? "todo" : "active"
+    }
     return { ...d, state }
   })
 
@@ -128,7 +138,9 @@ export function OrderFulfill({
       {/* 流程条：点击节点直接展示内容 */}
       <div className="rounded-lg border border-border bg-card p-5">
         <div className="mb-1 text-sm font-medium text-foreground">履约流程</div>
-        <p className="mb-5 text-xs text-muted-foreground">点击任一节点直接办理，节点之间可自由切换</p>
+        <p className="mb-5 text-xs text-muted-foreground">
+          点击任一节点直接办理；标注「非必须」的节点可跳过，以双向箭头连接的节点顺序可互换
+        </p>
         <div className="flex items-center">
           {nodes.map((node, i) => {
             const meta = stateMeta[node.state]
@@ -153,8 +165,15 @@ export function OrderFulfill({
                   >
                     <node.icon className="size-5" />
                   </span>
-                  <span className={cn("text-sm font-medium", active ? "text-primary" : "text-foreground")}>
-                    {node.title}
+                  <span className="flex items-center gap-1">
+                    <span className={cn("text-sm font-medium", active ? "text-primary" : "text-foreground")}>
+                      {node.title}
+                    </span>
+                    {node.optional && (
+                      <span className="rounded bg-amber-50 px-1 py-px text-[10px] font-medium leading-tight text-amber-600 ring-1 ring-amber-200">
+                        非必须
+                      </span>
+                    )}
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <meta.Icon
@@ -168,14 +187,21 @@ export function OrderFulfill({
                     <span className="text-xs text-muted-foreground">{meta.label}</span>
                   </span>
                 </button>
-                {i < nodes.length - 1 && (
-                  <div
-                    className={cn(
-                      "mx-1 h-0.5 w-8 shrink-0 rounded-full sm:w-16",
-                      node.state === "done" ? "bg-emerald-300" : "bg-border",
-                    )}
-                  />
-                )}
+                {i < nodes.length - 1 &&
+                  (nodes[i + 1].group === node.group ? (
+                    // 同分组：顺序可互换，以双向箭头连接
+                    <div className="mx-1 flex shrink-0 flex-col items-center gap-0.5">
+                      <ArrowLeftRight className="size-4 text-primary" />
+                      <span className="whitespace-nowrap text-[10px] font-medium text-primary">顺序可互换</span>
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "mx-1 h-0.5 w-8 shrink-0 rounded-full sm:w-16",
+                        node.state === "done" ? "bg-emerald-300" : "bg-border",
+                      )}
+                    />
+                  ))}
               </div>
             )
           })}

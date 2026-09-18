@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/shared/page-header"
 import { StatusPill } from "@/components/shared/status-pill"
 import { Modal } from "@/components/shared/modal"
 import { DataTable, FilterBar, FilterChip, type Column } from "@/components/shared/data-table"
-import { reverseOrders, reversePayees, REVERSE_ANNUAL_LIMIT, type ReverseOrder, type ReversePayee } from "@/lib/steel-data"
+import { reverseOrders, reversePayees, REVERSE_ANNUAL_LIMIT, type ReverseOrder, type ReversePayee, type ReverseInvoiceRecord } from "@/lib/steel-data"
 import { Receipt, ShieldCheck, ShieldAlert, Loader2, FileText, Landmark, UserRound, PackageCheck } from "lucide-react"
 
 const yuan = (n: number) => `¥${n.toLocaleString()}`
@@ -29,8 +29,11 @@ const invoiceTone = (s: ReverseOrder["invoiceStatus"]) => (s === "已开票" ? "
 export function FinanceReverse() {
   const [region, setRegion] = useState("全部")
   const [invoiceStatus, setInvoiceStatus] = useState("全部")
+  const [settleStatus, setSettleStatus] = useState("全部")
+  const [category, setCategory] = useState("全部")
   const [keyword, setKeyword] = useState("")
   const [issueId, setIssueId] = useState<string | null>(null)
+  const [viewId, setViewId] = useState<string | null>(null)
   // 各自然人年度已开票额（可累加）
   const [usedMap, setUsedMap] = useState<Record<string, number>>(() =>
     Object.fromEntries(reversePayees.map((p) => [p.id, p.annualUsed])),
@@ -38,16 +41,20 @@ export function FinanceReverse() {
   const [orders, setOrders] = useState<ReverseOrder[]>(() => reverseOrders.map((o) => ({ ...o })))
 
   const regions = useMemo(() => ["全部", ...Array.from(new Set(orders.map((o) => o.region)))], [orders])
+  const categories = useMemo(() => ["全部", ...Array.from(new Set(orders.map((o) => o.category)))], [orders])
 
   const rows = useMemo(
     () =>
       orders.filter((o) => {
         if (region !== "全部" && o.region !== region) return false
         if (invoiceStatus !== "全部" && o.invoiceStatus !== invoiceStatus) return false
-        if (keyword && !`${o.payeeName}${o.idNo}${o.id}`.toLowerCase().includes(keyword.toLowerCase())) return false
+        if (settleStatus !== "全部" && o.settleStatus !== settleStatus) return false
+        if (category !== "全部" && o.category !== category) return false
+        if (keyword && !`${o.payeeName}${o.idNo}${o.id}${o.invoiceNo ?? ""}`.toLowerCase().includes(keyword.toLowerCase()))
+          return false
         return true
       }),
-    [region, invoiceStatus, keyword, orders],
+    [region, invoiceStatus, settleStatus, category, keyword, orders],
   )
 
   const stats = useMemo(() => {
@@ -60,6 +67,25 @@ export function FinanceReverse() {
   const issueOrder = orders.find((o) => o.id === issueId) ?? null
   const issuePayee = issueOrder ? reversePayees.find((p) => p.id === issueOrder.payeeId) ?? null : null
   const issueUsed = issueOrder ? usedMap[issueOrder.payeeId] ?? 0 : 0
+
+  const viewOrder = orders.find((o) => o.id === viewId) ?? null
+  const viewPayee = viewOrder ? reversePayees.find((p) => p.id === viewOrder.payeeId) ?? null : null
+  const viewRecord: ReverseInvoiceRecord | null = useMemo(() => {
+    if (!viewOrder) return null
+    const matched = viewPayee?.records.find((r) => r.id === viewOrder.invoiceNo || r.orderId === viewOrder.id)
+    if (matched) return matched
+    // 本次会话中新开具的发票，未在自然人历史记录里，则由订单信息派生
+    return {
+      id: viewOrder.invoiceNo ?? viewOrder.id.replace("DD", "RP"),
+      orderId: viewOrder.id,
+      category: viewOrder.category,
+      qty: viewOrder.qty,
+      amount: viewOrder.amount,
+      taxRate: "3%",
+      issueDate: viewOrder.issueDate ?? new Date().toISOString().slice(0, 10),
+      status: viewOrder.invoiceStatus === "已作废" ? "已作废" : "已开具",
+    }
+  }, [viewOrder, viewPayee])
 
   function handleIssue(order: ReverseOrder) {
     setUsedMap((prev) => ({ ...prev, [order.payeeId]: (prev[order.payeeId] ?? 0) + order.amount }))
@@ -120,7 +146,10 @@ export function FinanceReverse() {
             反向开票
           </Button>
         ) : (
-          <span className="text-xs text-muted-foreground whitespace-nowrap">{r.issueDate ?? "—"}</span>
+          <Button size="sm" variant="outline" onClick={() => setViewId(r.id)}>
+            <FileText />
+            查看发票
+          </Button>
         ),
     },
   ]
@@ -148,6 +177,8 @@ export function FinanceReverse() {
       <div className="mt-4 rounded-xl border border-border bg-card p-4">
         <FilterBar>
           <FilterChip label="地区" value={region} options={regions} onChange={setRegion} />
+          <FilterChip label="类别" value={category} options={categories} onChange={setCategory} />
+          <FilterChip label="结算状态" value={settleStatus} options={["全部", "已结算", "待结算"]} onChange={setSettleStatus} />
           <FilterChip label="开票状态" value={invoiceStatus} options={["全部", "待开票", "已开票", "已作废"]} onChange={setInvoiceStatus} />
           <div className="flex-1" />
           <input
@@ -174,7 +205,93 @@ export function FinanceReverse() {
         onClose={() => setIssueId(null)}
         onIssue={handleIssue}
       />
+
+      <InvoiceDetailModal order={viewOrder} payee={viewPayee} record={viewRecord} onClose={() => setViewId(null)} />
     </div>
+  )
+}
+
+function InvoiceDetailModal({
+  order,
+  payee,
+  record,
+  onClose,
+}: {
+  order: ReverseOrder | null
+  payee: ReversePayee | null
+  record: ReverseInvoiceRecord | null
+  onClose: () => void
+}) {
+  return (
+    <Modal
+      open={!!order}
+      onClose={onClose}
+      title={`发票详情 · ${record?.id ?? order?.invoiceNo ?? ""}`}
+      size="lg"
+      footer={
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={onClose}>
+            关闭
+          </Button>
+        </div>
+      }
+    >
+      {order && record && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Receipt className="size-5" />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-foreground">增值税普通发票（反向开票）</div>
+                <div className="text-xs tabular-nums text-muted-foreground">发票号码 {record.id}</div>
+              </div>
+            </div>
+            <StatusPill tone={record.status === "已开具" ? "green" : "muted"} label={record.status} />
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">开票信息</div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+              <Row k="发票号码" v={record.id} />
+              <Row k="关联订单" v={record.orderId} />
+              <Row k="开票日期" v={record.issueDate} />
+              <Row k="类别" v={record.category} />
+              <Row k="数量" v={record.qty} />
+              <Row k="征收率" v={record.taxRate} />
+              <Row k="价税合计" v={yuan(record.amount)} />
+              <Row k="结算状态" v={order.settleStatus} />
+              <Row k="交货日期" v={order.deliveryDate} />
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">销售方 · 自然人</div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+              <Row k="自然人" v={payee?.name ?? order.payeeName} />
+              <Row k="身份证号" v={payee?.idNo ?? order.idNo} />
+              <Row k="地区" v={payee?.region ?? order.region} />
+              {payee && <Row k="收款账户" v={payee.bankAccount} />}
+              {payee && <Row k="税务年度" v={payee.taxYear} />}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4">
+            <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">购买方</div>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm sm:grid-cols-3">
+              <Row k="购买方" v="华东特钢集团" />
+              <Row k="开票主体" v="采购方代开" />
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+            <FileText className="mt-0.5 size-4 shrink-0" />
+            本发票由采购方（华东特钢集团）代自然人向税务机关申请代开，适用征收率 3%，已同步至国家金税系统并计入该自然人年度开票额度。
+          </div>
+        </div>
+      )}
+    </Modal>
   )
 }
 

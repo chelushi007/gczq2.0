@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   ArrowLeft,
   FileText,
@@ -91,6 +91,16 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
   const [confirmQuote, setConfirmQuote] = useState(false)
   const [inHall, setInHall] = useState(false)
   const [payTarget, setPayTarget] = useState<PayTarget>(null)
+  // 本次会话内的缴费结果：线上支付→已缴，线下支付→待核验
+  const [paidState, setPaidState] = useState<Record<PayKind, string | null>>({ fee: null, deposit: null, service: null })
+
+  const feeStatus = paidState.fee ?? item.feeStatus
+  const depositStatus = paidState.deposit ?? item.depositStatus
+  const serviceStatus = paidState.service ?? "未缴"
+
+  const handlePaid = (kind: PayKind, method: "online" | "offline") => {
+    setPaidState((prev) => ({ ...prev, [kind]: method === "online" ? "已缴" : "待核验" }))
+  }
 
   if (inHall) {
     return <BiddingHall item={item} onBack={() => setInHall(false)} />
@@ -201,8 +211,10 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
               </div>
               <p className="mt-2 text-xl font-semibold text-foreground">{item.signupFee}</p>
               <div className="mt-3 flex items-center justify-between">
-                <StatusPill tone={item.feeStatus === "已缴" ? "green" : "amber"}>{item.feeStatus}</StatusPill>
-                {item.feeStatus === "未缴" ? (
+                <StatusPill tone={feeStatus === "已缴" ? "green" : feeStatus === "待核验" ? "primary" : "amber"}>
+                  {feeStatus}
+                </StatusPill>
+                {feeStatus === "未缴" ? (
                   <Button size="sm" onClick={() => setPayTarget({ kind: "fee", label: "报名费", amount: item.signupFee })}>
                     去缴纳
                   </Button>
@@ -220,10 +232,20 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
               </div>
               <p className="mt-2 text-xl font-semibold text-foreground">{item.deposit}</p>
               <div className="mt-3 flex items-center justify-between">
-                <StatusPill tone={item.depositStatus === "已缴" ? "green" : item.depositStatus === "已退还" ? "gray" : "amber"}>
-                  {item.depositStatus}
+                <StatusPill
+                  tone={
+                    depositStatus === "已缴"
+                      ? "green"
+                      : depositStatus === "待核验"
+                        ? "primary"
+                        : depositStatus === "已退还"
+                          ? "gray"
+                          : "amber"
+                  }
+                >
+                  {depositStatus}
                 </StatusPill>
-                {item.depositStatus === "未缴" ? (
+                {depositStatus === "未缴" ? (
                   <Button
                     size="sm"
                     onClick={() => setPayTarget({ kind: "deposit", label: "投标保证金", amount: item.deposit })}
@@ -313,13 +335,19 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-xs text-muted-foreground">交易服务费</p>
                     <p className="mt-1.5 text-lg font-semibold text-foreground">¥3,200</p>
-                    <Button
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => setPayTarget({ kind: "service", label: "交易服务费", amount: "¥3,200" })}
-                    >
-                      去缴纳
-                    </Button>
+                    {serviceStatus === "未缴" ? (
+                      <Button
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => setPayTarget({ kind: "service", label: "交易服务费", amount: "¥3,200" })}
+                      >
+                        去缴纳
+                      </Button>
+                    ) : (
+                      <div className="mt-3">
+                        <StatusPill tone={serviceStatus === "已缴" ? "green" : "primary"}>{serviceStatus}</StatusPill>
+                      </div>
+                    )}
                   </div>
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-xs text-muted-foreground">中标合同</p>
@@ -369,7 +397,7 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
         </p>
       </Modal>
 
-      <PaymentModal target={payTarget} onClose={() => setPayTarget(null)} />
+      <PaymentModal target={payTarget} onClose={() => setPayTarget(null)} onPaid={handlePaid} />
     </div>
   )
 }
@@ -381,11 +409,36 @@ const onlineChannels: { key: string; label: string; desc: string; icon: typeof L
   { key: "unionpay", label: "银联快捷", desc: "储蓄卡 / 信用卡", icon: CreditCard },
 ]
 
-function PaymentModal({ target, onClose }: { target: PayTarget; onClose: () => void }) {
+function PaymentModal({
+  target,
+  onClose,
+  onPaid,
+}: {
+  target: PayTarget
+  onClose: () => void
+  onPaid: (kind: PayKind, method: "online" | "offline") => void
+}) {
   const [method, setMethod] = useState<"online" | "offline">("online")
   const [channel, setChannel] = useState("netbank")
   const [voucher, setVoucher] = useState("")
   const [copied, setCopied] = useState<string | null>(null)
+  const [done, setDone] = useState<"online" | "offline" | null>(null)
+
+  // 每次打开新的缴费项时重置表单
+  useEffect(() => {
+    if (target) {
+      setMethod("online")
+      setChannel("netbank")
+      setVoucher("")
+      setDone(null)
+    }
+  }, [target])
+
+  const submit = () => {
+    if (!target) return
+    onPaid(target.kind, method)
+    setDone(method)
+  }
 
   const bankInfo = [
     { k: "收款户名", v: "废钢智慧交易平台运营有限公司" },
@@ -407,25 +460,71 @@ function PaymentModal({ target, onClose }: { target: PayTarget; onClose: () => v
       title={`缴纳${target?.label ?? ""}`}
       size="lg"
       footer={
-        <>
-          <Button variant="outline" onClick={onClose}>
-            取消
-          </Button>
-          {method === "online" ? (
-            <Button onClick={onClose}>
-              <Zap />
-              立即支付 {target?.amount}
+        done ? (
+          <div className="flex justify-end">
+            <Button onClick={onClose}>完成</Button>
+          </div>
+        ) : (
+          <>
+            <Button variant="outline" onClick={onClose}>
+              取消
             </Button>
-          ) : (
-            <Button disabled={!voucher} onClick={onClose}>
-              <Upload />
-              提交转账凭证
-            </Button>
-          )}
-        </>
+            {method === "online" ? (
+              <Button onClick={submit}>
+                <Zap />
+                立即支付 {target?.amount}
+              </Button>
+            ) : (
+              <Button disabled={!voucher} onClick={submit}>
+                <Upload />
+                提交转账凭证
+              </Button>
+            )}
+          </>
+        )
       }
     >
-      {target && (
+      {target && done && (
+        <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
+          <span
+            className={
+              "flex size-14 items-center justify-center rounded-full " +
+              (done === "online" ? "bg-emerald-50 text-emerald-600" : "bg-primary/10 text-primary")
+            }
+          >
+            {done === "online" ? <CircleCheck className="size-7" /> : <Clock className="size-7" />}
+          </span>
+          <div>
+            <p className="text-base font-semibold text-foreground">
+              {done === "online" ? "支付成功" : "转账凭证已提交"}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {done === "online"
+                ? `${target.label} ${target.amount} 已支付成功，缴费状态已更新为「已缴」。`
+                : `${target.label} ${target.amount} 的转账凭证已提交，平台财务将在 1 个工作日内核验，当前状态「待核验」。`}
+            </p>
+          </div>
+          <div className="w-full rounded-lg border border-border bg-muted/30 p-3 text-left text-xs text-muted-foreground">
+            <div className="flex justify-between py-0.5">
+              <span>缴费项目</span>
+              <span className="font-medium text-foreground">{target.label}</span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span>缴费金额</span>
+              <span className="font-medium text-foreground">{target.amount}</span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span>支付方式</span>
+              <span className="font-medium text-foreground">{done === "online" ? "线上支付" : "线下支付"}</span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span>交易时间</span>
+              <span className="font-medium tabular-nums text-foreground">{new Date().toLocaleString("zh-CN")}</span>
+            </div>
+          </div>
+        </div>
+      )}
+      {target && !done && (
         <div className="space-y-4">
           {/* 金额概要 */}
           <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">

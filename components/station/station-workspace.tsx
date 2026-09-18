@@ -21,6 +21,7 @@ import { supplierBidResultTone, type SupplierBidItem } from "@/lib/steel-data"
 import { useSupplierBids } from "@/lib/bidding-store"
 import { SupplierBidDetail } from "./supplier-bid-detail"
 import { SignupDetail } from "./signup-detail"
+import { PaymentModal, type PayKind, type PayTarget } from "@/components/station/payment-modal"
 import { PurchaseBidding } from "@/components/steel-mill/purchase-bidding"
 import { PurchaseFixed } from "@/components/steel-mill/purchase-fixed"
 import { PurchaseAgreement } from "@/components/steel-mill/purchase-agreement"
@@ -287,7 +288,7 @@ type PayRow = {
   payMethod: string
   paidTime: string
   status: string
-  tone: "amber" | "green" | "gray"
+  tone: "amber" | "green" | "gray" | "blue"
 }
 
 const payMethods = ["线上支付", "银行转账", "平台代扣"]
@@ -296,12 +297,19 @@ function PaymentContent({ kind }: { kind: "fee" | "deposit" | "service" }) {
   const [tab, setTab] = useState("全部")
   const label = kind === "fee" ? "报名费" : kind === "deposit" ? "保证金" : "服务费"
   const supplierBidList = useSupplierBids()
+  // 本次会话内的缴费结果：线上支付→已缴，线下支付→待核验
+  const [paidState, setPaidState] = useState<Record<string, { status: string; method: "online" | "offline" }>>({})
+  const [payTarget, setPayTarget] = useState<PayTarget>(null)
+  const [payingNo, setPayingNo] = useState<string | null>(null)
+
   const allRows: PayRow[] = supplierBidList
     .filter((b) => (kind === "service" ? b.result === "已中标" : b.signupStatus !== "未报名"))
     .map((b, i) => {
       const raw = kind === "fee" ? b.feeStatus : kind === "deposit" ? b.depositStatus : b.result === "已中标" ? "未缴" : "—"
-      const status = raw === "未缴" ? "待缴纳" : raw
-      const tone: PayRow["tone"] = status === "已缴" ? "green" : status === "已退还" ? "gray" : "amber"
+      const override = paidState[b.id]
+      const status = override ? override.status : raw === "未缴" ? "待缴纳" : raw
+      const tone: PayRow["tone"] =
+        status === "已缴" ? "green" : status === "已退还" ? "gray" : status === "待核验" ? "blue" : "amber"
       const paid = status === "已缴" || status === "已退还"
       return {
         no: b.id,
@@ -310,8 +318,14 @@ function PaymentContent({ kind }: { kind: "fee" | "deposit" | "service" }) {
         category: b.category,
         amount: kind === "fee" ? b.signupFee : kind === "deposit" ? b.deposit : "¥3,200",
         dueTime: b.signupEnd,
-        payMethod: paid ? payMethods[i % payMethods.length] : "—",
-        paidTime: paid ? b.bidStart : "—",
+        payMethod: override
+          ? override.method === "online"
+            ? "线上支付"
+            : "线下支付"
+          : paid
+            ? payMethods[i % payMethods.length]
+            : "—",
+        paidTime: override ? new Date().toLocaleString("zh-CN") : paid ? b.bidStart : "—",
         status,
         tone,
       }
@@ -342,7 +356,15 @@ function PaymentContent({ kind }: { kind: "fee" | "deposit" | "service" }) {
       className: "whitespace-nowrap",
       render: (r) =>
         r.status === "待缴纳" ? (
-          <Button size="sm">去缴纳</Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              setPayingNo(r.no)
+              setPayTarget({ kind, label, amount: r.amount })
+            }}
+          >
+            去缴纳
+          </Button>
         ) : (
           <Button variant="outline" size="sm">
             查看凭证
@@ -350,6 +372,14 @@ function PaymentContent({ kind }: { kind: "fee" | "deposit" | "service" }) {
         ),
     },
   ]
+
+  const handlePaid = (_kind: PayKind, method: "online" | "offline") => {
+    if (!payingNo) return
+    setPaidState((prev) => ({
+      ...prev,
+      [payingNo]: { status: method === "online" ? "已缴" : "待核验", method },
+    }))
+  }
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -367,6 +397,15 @@ function PaymentContent({ kind }: { kind: "fee" | "deposit" | "service" }) {
         </FilterBar>
       </div>
       <DataTable columns={columns} rows={rows} rowKey={(r) => r.no} stickyLastColumn />
+
+      <PaymentModal
+        target={payTarget}
+        onClose={() => {
+          setPayTarget(null)
+          setPayingNo(null)
+        }}
+        onPaid={handlePaid}
+      />
     </div>
   )
 }

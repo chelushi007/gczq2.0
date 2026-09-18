@@ -14,6 +14,13 @@ import {
   CircleCheck,
   CircleDashed,
   TrendingDown,
+  Landmark,
+  Smartphone,
+  CreditCard,
+  Upload,
+  Copy,
+  Check,
+  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { StatusPill } from "@/components/shared/status-pill"
@@ -24,6 +31,10 @@ import type { SupplierBidItem } from "@/lib/steel-data"
 
   // 供应商参与竞价的流程：报名参与 → 缴费缴金 → 在线竞价 → 竞价结果
 type StageKey = "join" | "pay" | "bid" | "win"
+
+// 三类缴费：报名费、保证金、交易服务费，均支持线上/线下支付
+type PayKind = "fee" | "deposit" | "service"
+type PayTarget = { kind: PayKind; label: string; amount: string } | null
 
 const stages: { key: StageKey; label: string; icon: typeof FileText }[] = [
   { key: "join", label: "报名参与", icon: ClipboardCheck },
@@ -79,6 +90,7 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
   const [quote, setQuote] = useState("")
   const [confirmQuote, setConfirmQuote] = useState(false)
   const [inHall, setInHall] = useState(false)
+  const [payTarget, setPayTarget] = useState<PayTarget>(null)
 
   if (inHall) {
     return <BiddingHall item={item} onBack={() => setInHall(false)} />
@@ -190,7 +202,15 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
               <p className="mt-2 text-xl font-semibold text-foreground">{item.signupFee}</p>
               <div className="mt-3 flex items-center justify-between">
                 <StatusPill tone={item.feeStatus === "已缴" ? "green" : "amber"}>{item.feeStatus}</StatusPill>
-                {item.feeStatus === "未缴" ? <Button size="sm">去缴纳</Button> : <Button variant="outline" size="sm">查看凭证</Button>}
+                {item.feeStatus === "未缴" ? (
+                  <Button size="sm" onClick={() => setPayTarget({ kind: "fee", label: "报名费", amount: item.signupFee })}>
+                    去缴纳
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm">
+                    查看凭证
+                  </Button>
+                )}
               </div>
             </div>
             <div className="rounded-lg border border-border p-4">
@@ -203,7 +223,18 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
                 <StatusPill tone={item.depositStatus === "已缴" ? "green" : item.depositStatus === "已退还" ? "gray" : "amber"}>
                   {item.depositStatus}
                 </StatusPill>
-                {item.depositStatus === "未缴" ? <Button size="sm">去缴纳</Button> : <Button variant="outline" size="sm">查看凭证</Button>}
+                {item.depositStatus === "未缴" ? (
+                  <Button
+                    size="sm"
+                    onClick={() => setPayTarget({ kind: "deposit", label: "投标保证金", amount: item.deposit })}
+                  >
+                    去缴纳
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm">
+                    查看凭证
+                  </Button>
+                )}
               </div>
             </div>
             <p className="sm:col-span-2 text-xs text-muted-foreground">
@@ -282,7 +313,13 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-xs text-muted-foreground">交易服务费</p>
                     <p className="mt-1.5 text-lg font-semibold text-foreground">¥3,200</p>
-                    <Button size="sm" className="mt-3">去缴纳</Button>
+                    <Button
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => setPayTarget({ kind: "service", label: "交易服务费", amount: "¥3,200" })}
+                    >
+                      去缴纳
+                    </Button>
                   </div>
                   <div className="rounded-lg border border-border p-4">
                     <p className="text-xs text-muted-foreground">中标合同</p>
@@ -331,6 +368,193 @@ export function SupplierBidDetail({ item, onBack }: { item: SupplierBidItem; onB
           ，减价竞价一经提交不可撤回，是否确认？
         </p>
       </Modal>
+
+      <PaymentModal target={payTarget} onClose={() => setPayTarget(null)} />
     </div>
+  )
+}
+
+const onlineChannels: { key: string; label: string; desc: string; icon: typeof Landmark }[] = [
+  { key: "netbank", label: "对公网银", desc: "企业网银快捷支付", icon: Landmark },
+  { key: "wechat", label: "微信支付", desc: "扫码支付", icon: Smartphone },
+  { key: "alipay", label: "支付宝", desc: "扫码支付", icon: Smartphone },
+  { key: "unionpay", label: "银联快捷", desc: "储蓄卡 / 信用卡", icon: CreditCard },
+]
+
+function PaymentModal({ target, onClose }: { target: PayTarget; onClose: () => void }) {
+  const [method, setMethod] = useState<"online" | "offline">("online")
+  const [channel, setChannel] = useState("netbank")
+  const [voucher, setVoucher] = useState("")
+  const [copied, setCopied] = useState<string | null>(null)
+
+  const bankInfo = [
+    { k: "收款户名", v: "废钢智慧交易平台运营有限公司" },
+    { k: "开户银行", v: "招商银行苏州分行营业部" },
+    { k: "银行账号", v: "5129 6688 2233 4455" },
+    { k: "备注 / 摘要", v: target ? `${target.label} · JJ竞价缴费` : "" },
+  ]
+
+  const copy = (text: string) => {
+    navigator.clipboard?.writeText(text).catch(() => {})
+    setCopied(text)
+    setTimeout(() => setCopied(null), 1500)
+  }
+
+  return (
+    <Modal
+      open={!!target}
+      onClose={onClose}
+      title={`缴纳${target?.label ?? ""}`}
+      size="lg"
+      footer={
+        <>
+          <Button variant="outline" onClick={onClose}>
+            取消
+          </Button>
+          {method === "online" ? (
+            <Button onClick={onClose}>
+              <Zap />
+              立即支付 {target?.amount}
+            </Button>
+          ) : (
+            <Button disabled={!voucher} onClick={onClose}>
+              <Upload />
+              提交转账凭证
+            </Button>
+          )}
+        </>
+      }
+    >
+      {target && (
+        <div className="space-y-4">
+          {/* 金额概要 */}
+          <div className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
+            <div>
+              <div className="text-xs text-muted-foreground">缴费项目</div>
+              <div className="text-sm font-medium text-foreground">{target.label}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">应缴金额</div>
+              <div className="text-xl font-semibold text-primary">{target.amount}</div>
+            </div>
+          </div>
+
+          {/* 支付方式切换 */}
+          <div className="grid grid-cols-2 gap-3">
+            {(
+              [
+                { key: "online" as const, title: "线上支付", desc: "实时到账，自动核验", icon: Zap },
+                { key: "offline" as const, title: "线下支付", desc: "银行转账，上传凭证", icon: Landmark },
+              ]
+            ).map((m) => {
+              const active = method === m.key
+              const Icon = m.icon
+              return (
+                <button
+                  key={m.key}
+                  onClick={() => setMethod(m.key)}
+                  className={
+                    "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors " +
+                    (active ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border hover:bg-muted/40")
+                  }
+                >
+                  <span
+                    className={
+                      "flex size-9 shrink-0 items-center justify-center rounded-md " +
+                      (active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")
+                    }
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-medium text-foreground">{m.title}</span>
+                    <span className="block text-xs text-muted-foreground">{m.desc}</span>
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {method === "online" ? (
+            <div className="space-y-3">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">选择支付渠道</div>
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                {onlineChannels.map((c) => {
+                  const active = channel === c.key
+                  const Icon = c.icon
+                  return (
+                    <button
+                      key={c.key}
+                      onClick={() => setChannel(c.key)}
+                      className={
+                        "flex flex-col items-center gap-1.5 rounded-lg border p-3 text-center transition-colors " +
+                        (active ? "border-primary bg-primary/5 ring-1 ring-primary/30" : "border-border hover:bg-muted/40")
+                      }
+                    >
+                      <Icon className={"size-5 " + (active ? "text-primary" : "text-muted-foreground")} />
+                      <span className="text-xs font-medium text-foreground">{c.label}</span>
+                      <span className="text-[10px] leading-tight text-muted-foreground">{c.desc}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+                <Zap className="mt-0.5 size-4 shrink-0 text-primary" />
+                线上支付成功后系统实时核验到账，对应缴费状态将自动更新为「已缴」，无需人工确认。
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">平台收款账户</div>
+              <div className="rounded-lg border border-border">
+                {bankInfo.map((b, i) => (
+                  <div
+                    key={b.k}
+                    className={"flex items-center justify-between gap-3 px-4 py-2.5 " + (i > 0 ? "border-t border-border" : "")}
+                  >
+                    <span className="text-xs text-muted-foreground">{b.k}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-medium tabular-nums text-foreground">{b.v}</span>
+                      <button
+                        onClick={() => copy(b.v)}
+                        className="text-muted-foreground transition-colors hover:text-primary"
+                        aria-label={`复制${b.k}`}
+                      >
+                        {copied === b.v ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                      </button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  上传转账凭证
+                </span>
+                <div
+                  className={
+                    "flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed p-4 text-sm transition-colors " +
+                    (voucher ? "border-primary/40 bg-primary/5 text-primary" : "border-border text-muted-foreground hover:bg-muted/40")
+                  }
+                >
+                  {voucher ? <Check className="size-4" /> : <Upload className="size-4" />}
+                  {voucher || "点击上传银行回单 / 转账截图（PNG、JPG、PDF）"}
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="hidden"
+                    onChange={(e) => setVoucher(e.target.files?.[0]?.name ?? "")}
+                  />
+                </div>
+              </label>
+              <div className="flex items-start gap-2 rounded-lg border border-border bg-background p-3 text-xs text-muted-foreground">
+                <Landmark className="mt-0.5 size-4 shrink-0 text-primary" />
+                请按上述账户完成转账并上传凭证，平台财务将在 1 个工作日内人工核验，核验通过后缴费状态更新为「已缴」。
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </Modal>
   )
 }

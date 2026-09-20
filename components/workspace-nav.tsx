@@ -14,6 +14,7 @@ import {
   ShoppingCart,
   ClipboardList,
   Wallet,
+  BarChart3,
   Gavel,
   Tag,
   FileSignature,
@@ -37,7 +38,12 @@ const leafIcon: Record<WorkspaceKey, LucideIcon> = {
   mill: Factory,
   station: Recycle,
   supplier: Truck,
-  "ops-tbd": Settings2,
+  "ops-home": LayoutDashboard,
+  "ops-projects": Gavel,
+  "ops-orders": ClipboardList,
+  "ops-finance": Wallet,
+  "ops-stats": BarChart3,
+  "ops-config": Settings2,
 }
 
 interface MillNode {
@@ -227,7 +233,7 @@ export function WorkspaceNav({
                   // 用户工作台下的钢厂/回收站/供应商仅作为可展开父级，不承载页面内容
                   const isParent = (hasMillMenu || hasStationTree || !!subMenu) && group.id === "user"
                   const expandable = isParent
-                  // 父级本身永不高亮；是否有子级被选中由子菜单自行控制
+                  // 父级本身永不高亮；是否有子级被选中由���菜单自行控制
                   const isActive = !isParent && active === leaf.key
                   const isOpen = openLeaves.has(leaf.key)
                   const showChildren = expandable && isOpen && !collapsed

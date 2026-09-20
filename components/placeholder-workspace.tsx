@@ -1,4 +1,4 @@
-import { Recycle, Truck, Cog, Factory, Users, type LucideIcon } from "lucide-react"
+import { Recycle, Truck, Factory, Users, type LucideIcon } from "lucide-react"
 import type { WorkspaceKey } from "@/lib/steel-data"
 import type { SupplierSub } from "@/components/workspace-nav"
 
@@ -64,12 +64,6 @@ const config: Record<
       "自然人由回收站进行反向开票",
     ],
   },
-  "ops-tbd": {
-    icon: Cog,
-    title: "运营工作台",
-    desc: "运营工作台下级菜单待定，规划中。",
-    points: ["角色与权限管理", "交易与合规监管", "数据看板与运营分析", "结算与开票管理"],
-  },
 }
 
 export function PlaceholderWorkspace({
@@ -80,7 +74,7 @@ export function PlaceholderWorkspace({
   supplierSub?: SupplierSub
 }) {
   const c =
-    workspace === "supplier" && supplierSub ? supplierSubConfig[supplierSub] : (config[workspace] ?? config["ops-tbd"])
+    workspace === "supplier" && supplierSub ? supplierSubConfig[supplierSub] : (config[workspace] ?? config["supplier"])
   const Icon = c.icon
   return (
     <div className="flex h-full items-center justify-center p-6">

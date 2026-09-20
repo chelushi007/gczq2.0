@@ -6,10 +6,11 @@ import { WorkspaceNav } from "@/components/workspace-nav"
 import { PortalHome } from "@/components/portal-home"
 import { SteelMillWorkspace } from "@/components/steel-mill/steel-mill-workspace"
 import { StationWorkspace } from "@/components/station/station-workspace"
+import { OpsWorkspace } from "@/components/ops/ops-workspace"
 import { PlaceholderWorkspace } from "@/components/placeholder-workspace"
 import { SteelZoneChannel } from "@/components/portal/steel-zone-channel"
 import type { SupplierSub } from "@/components/workspace-nav"
-import { workspaceNav, stationLeafPath, type WorkspaceKey, type MillMenuKey } from "@/lib/steel-data"
+import { workspaceNav, stationLeafPath, type WorkspaceKey, type MillMenuKey, type OpsMenuKey } from "@/lib/steel-data"
 
 const titleMap: Record<WorkspaceKey, { group: string; leaf: string }> = (() => {
   const m = {} as Record<WorkspaceKey, { group: string; leaf: string }>
@@ -94,14 +95,13 @@ export default function Page() {
             />
           )}
           {active === "station" && <StationWorkspace leaf={stationLeaf} onNavigate={setStationLeaf} />}
+          {active.startsWith("ops-") && <OpsWorkspace section={active as OpsMenuKey} onNavigate={setActive} />}
           {active === "portal-steel" && (
             <div className="h-full overflow-y-auto">
               <SteelZoneChannel onPublishDemand={handlePublishDemand} />
             </div>
           )}
-          {(active === "supplier" || active === "ops-tbd") && (
-            <PlaceholderWorkspace workspace={active} supplierSub={supplierSub} />
-          )}
+          {active === "supplier" && <PlaceholderWorkspace workspace={active} supplierSub={supplierSub} />}
         </div>
       </main>
     </div>

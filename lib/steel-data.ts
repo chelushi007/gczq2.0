@@ -6,7 +6,15 @@ export type WorkspaceKey =
   | "mill"
   | "station"
   | "supplier"
-  | "ops-tbd"
+  | "ops-home"
+  | "ops-projects"
+  | "ops-orders"
+  | "ops-finance"
+  | "ops-stats"
+  | "ops-config"
+
+// 运营工作台内部菜单键（与 ops-* WorkspaceKey 一一对应）
+export type OpsMenuKey = "ops-home" | "ops-projects" | "ops-orders" | "ops-finance" | "ops-stats" | "ops-config"
 
 export interface NavLeaf {
   key: WorkspaceKey
@@ -42,7 +50,14 @@ export const workspaceNav: NavGroup[] = [
   {
     id: "ops",
     label: "运营工作台",
-    children: [{ key: "ops-tbd", label: "待定", desc: "规划中" }],
+    children: [
+      { key: "ops-home", label: "工作台首页", desc: "运营总览" },
+      { key: "ops-projects", label: "项目管理", desc: "竞价/固价/协议" },
+      { key: "ops-orders", label: "订单管理", desc: "全平台订单" },
+      { key: "ops-finance", label: "财务管理", desc: "服务费/结算" },
+      { key: "ops-stats", label: "统计查询", desc: "数据分析" },
+      { key: "ops-config", label: "系统配置", desc: "参数/权限" },
+    ],
   },
 ]
 
@@ -53,7 +68,7 @@ export const designNav: { key: WorkspaceKey; label: string }[] = [
   { key: "mill", label: "工作台 · 钢厂" },
   { key: "station", label: "工作台 · 回收基地" },
   { key: "supplier", label: "工作台 · 供应商" },
-  { key: "ops-tbd", label: "运营工作台" },
+  { key: "ops-home", label: "运营工作台" },
 ]
 
 // ---------- 钢厂工作台内部菜单 ----------
@@ -732,5 +747,225 @@ export const coopMillList: CoopMill[] = [
   { id: "CM001", millName: "华东特钢集团", region: "江苏·苏州", category: "重废 / 统废", cooperation: "协议基地", settlement: "月结 · 电子合同", totalQty: "12,800 吨", joinedAt: "2026-03-15", status: "合作中" },
   { id: "CM002", millName: "宝武再生资源", region: "上海·宝山", category: "统废", cooperation: "协议基地", settlement: "协议月结", totalQty: "9,600 吨", joinedAt: "2026-05-10", status: "合作中" },
   { id: "CM003", millName: "南钢联合", region: "江苏·南京", category: "生铁", cooperation: "普通基地", settlement: "一票制月结", totalQty: "2,100 吨", joinedAt: "2026-07-02", status: "合作中" },
-  { id: "CM004", millName: "马钢股份", region: "安徽·马鞍山", category: "统废", cooperation: "普通基地", settlement: "货到结算", totalQty: "—", joinedAt: "2026-09-06", status: "审核中" },
+  { id: "CM004", millName: "马钢股份", region: "安徽·马鞍山", category: "���废", cooperation: "普通基地", settlement: "货到结算", totalQty: "—", joinedAt: "2026-09-06", status: "审核中" },
   ]
+
+// ==================== 运营工作台数据 ====================
+
+// ---------- 首页 KPI ----------
+export interface OpsKpi {
+  label: string
+  value: string
+  unit: string
+  trend: string
+  trendUp: boolean
+  tone: "primary" | "amber" | "green" | "violet"
+}
+
+export const opsKpis: OpsKpi[] = [
+  { label: "平台成交额(GMV)", value: "1.86", unit: "亿元", trend: "+12.4%", trendUp: true, tone: "primary" },
+  { label: "进行中项目", value: "37", unit: "个", trend: "+6", trendUp: true, tone: "amber" },
+  { label: "在途订单", value: "128", unit: "单", trend: "+9", trendUp: true, tone: "green" },
+  { label: "本月服务费收入", value: "324.6", unit: "万元", trend: "+8.1%", trendUp: true, tone: "violet" },
+  { label: "入驻企业", value: "512", unit: "家", trend: "+18", trendUp: true, tone: "primary" },
+  { label: "保证金在托", value: "6,240", unit: "万元", trend: "+3.2%", trendUp: true, tone: "green" },
+]
+
+// 首页：待办事项
+export interface OpsTodo {
+  id: string
+  type: "企业审核" | "项目审核" | "异常订单" | "结算复核" | "投诉工单"
+  title: string
+  meta: string
+  level: "高" | "中" | "低"
+  time: string
+}
+
+export const opsTodos: OpsTodo[] = [
+  { id: "T-2041", type: "企业审核", title: "「盛通金属有限公司」提交入驻认证，待资质审核", meta: "供应商 · 企业", level: "高", time: "10 分钟前" },
+  { id: "T-2040", type: "项目审核", title: "竞价项目 JJ20260919-006 待发布审核", meta: "华东钢铁厂 · 重废 500 吨", level: "高", time: "38 分钟前" },
+  { id: "T-2039", type: "异常订单", title: "订单 DD20260915-018 交货逾期，触发风控提醒", meta: "协议 · 城南回收站", level: "中", time: "1 小时前" },
+  { id: "T-2038", type: "结算复核", title: "结算单 JS20260918-032 服务费金额待复核", meta: "¥12,600 服务费", level: "中", time: "2 小时前" },
+  { id: "T-2037", type: "投诉工单", title: "回收基地反馈竞价大厅报价延迟问题", meta: "工单 GD-0912", level: "低", time: "昨天" },
+]
+
+// 首页：平台动态
+export const opsActivities = [
+  { time: "10:24", type: "成交", text: "竞价项目 JJ20260919-003 结标，华东再生以 ¥2,650/吨 中标" },
+  { time: "09:50", type: "入驻", text: "新企业「金鼎再生资源」通过资质审核，正式入驻平台" },
+  { time: "09:12", type: "结算", text: "结算单 JS20260918-029 已完成，平台代收服务费 ¥8,400" },
+  { time: "08:40", type: "风控", text: "订单 DD20260915-018 触发交货逾期预警，已通知运营跟进" },
+  { time: "昨天", type: "配置", text: "运营管理员调整竞价保证金比例：由 5% 上调至 8%" },
+]
+
+// ---------- 项目管理 ----------
+export interface OpsProject {
+  id: string
+  name: string
+  type: "竞价" | "固定价" | "协议"
+  initiator: string
+  initiatorRole: "钢厂" | "回收基地"
+  category: string
+  qty: string
+  budget: string
+  signups: number
+  status: "待审核" | "报名中" | "竞价中" | "待开标" | "已成交" | "已流标"
+  createdAt: string
+}
+
+export const opsProjects: OpsProject[] = [
+  { id: "JJ20260919-006", name: "华东钢铁厂重废竞价采购", type: "竞价", initiator: "华东钢铁厂", initiatorRole: "钢厂", category: "重废", qty: "500 吨", budget: "¥133 万", signups: 0, status: "待审核", createdAt: "2026-09-19" },
+  { id: "JJ20260919-003", name: "宝武再生统废季度竞价", type: "竞价", initiator: "宝武再生资源", initiatorRole: "钢厂", category: "统废", qty: "800 吨", budget: "¥192 万", signups: 12, status: "竞价中", createdAt: "2026-09-19" },
+  { id: "GD20260918-011", name: "南钢生铁固定价回收", type: "固定价", initiator: "南钢联合", initiatorRole: "钢厂", category: "生铁", qty: "300 吨", budget: "¥88 万", signups: 5, status: "报名中", createdAt: "2026-09-18" },
+  { id: "JJ20260918-009", name: "马钢重废专场竞价", type: "竞价", initiator: "马钢股份", initiatorRole: "钢厂", category: "重废", qty: "620 吨", budget: "¥164 万", signups: 9, status: "待开标", createdAt: "2026-09-18" },
+  { id: "XY20260917-002", name: "城南回收站协议供货", type: "协议", initiator: "城南再生资源回收站", initiatorRole: "回收基地", category: "统废", qty: "1,200 吨", budget: "按周期结算", signups: 1, status: "已成交", createdAt: "2026-09-17" },
+  { id: "GD20260916-008", name: "华东特钢固定价采购", type: "固定价", initiator: "华东特钢集团", initiatorRole: "钢厂", category: "重废", qty: "260 吨", budget: "¥69 万", signups: 4, status: "已成交", createdAt: "2026-09-16" },
+  { id: "JJ20260915-005", name: "环宇物资竞价专场", type: "竞价", initiator: "环宇物资回收站", initiatorRole: "回收基地", category: "重废", qty: "420 吨", budget: "¥110 万", signups: 0, status: "已流标", createdAt: "2026-09-15" },
+  { id: "GD20260914-004", name: "盛通金属生铁固定价", type: "固定价", initiator: "盛通金属有限公司", initiatorRole: "钢厂", category: "生铁", qty: "400 吨", budget: "¥118 万", signups: 6, status: "已成交", createdAt: "2026-09-14" },
+]
+
+// ---------- 全平台订单 ----------
+export interface OpsOrder {
+  id: string
+  channel: "竞价" | "固定价" | "协议"
+  buyer: string
+  seller: string
+  category: string
+  qty: string
+  amount: string | null
+  fulfillStatus: "待发货" | "运输中" | "已收货" | "已完成"
+  settleStatus: "待结算" | "结算中" | "已结算"
+  createdAt: string
+}
+
+export const opsOrders: OpsOrder[] = [
+  { id: "DD20260918-024", channel: "竞价", buyer: "宝武再生资源", seller: "华东再生资源", category: "统废", qty: "800 吨", amount: "¥1,920,000", fulfillStatus: "运输中", settleStatus: "结算中", createdAt: "2026-09-18" },
+  { id: "DD20260917-021", channel: "固定价", buyer: "华东特钢集团", seller: "金鼎再生资源", category: "重废", qty: "260 吨", amount: "¥696,800", fulfillStatus: "已收货", settleStatus: "待结算", createdAt: "2026-09-17" },
+  { id: "DD20260916-018", channel: "协议", buyer: "华东钢铁厂", seller: "城南再生资源回收站", category: "统废", qty: "1,200 吨", amount: null, fulfillStatus: "待发货", settleStatus: "待结算", createdAt: "2026-09-16" },
+  { id: "DD20260915-013", channel: "竞价", buyer: "华东钢铁厂", seller: "华东再生资源", category: "重废", qty: "500 吨", amount: "¥1,325,000", fulfillStatus: "已完成", settleStatus: "已结算", createdAt: "2026-09-15" },
+  { id: "DD20260914-010", channel: "固定价", buyer: "南钢联合", seller: "盛通金属有限公司", category: "生铁", qty: "400 吨", amount: "¥1,180,000", fulfillStatus: "已收货", settleStatus: "结算中", createdAt: "2026-09-14" },
+  { id: "DD20260913-007", channel: "固定价", buyer: "马钢股份", seller: "张建国（自然人）", category: "统废", qty: "35 吨", amount: "¥84,350", fulfillStatus: "已完成", settleStatus: "已结算", createdAt: "2026-09-13" },
+  { id: "DD20260912-005", channel: "竞价", buyer: "华东特钢集团", seller: "环宇物资回收站", category: "重废", qty: "420 吨", amount: "¥1,100,400", fulfillStatus: "运输中", settleStatus: "待结算", createdAt: "2026-09-12" },
+  { id: "DD20260911-002", channel: "协议", buyer: "宝武再生资源", seller: "城南再生资源回收站", category: "重废", qty: "900 吨", amount: null, fulfillStatus: "已完成", settleStatus: "已结算", createdAt: "2026-09-11" },
+]
+
+// ---------- 财务 · 资金概览 ----------
+export const opsFinanceStats = [
+  { label: "累计服务费收入", value: "¥2,860 万", sub: "本年累计", tone: "primary" as const },
+  { label: "保证金在托金额", value: "¥6,240 万", sub: "跨 128 个项目", tone: "green" as const },
+  { label: "待结算货款", value: "¥1,420 万", sub: "涉及 36 单", tone: "amber" as const },
+  { label: "本月开票金额", value: "¥1,180 万", sub: "已开 214 张", tone: "violet" as const },
+]
+
+// 财务 · 结算单
+export interface OpsSettlement {
+  id: string
+  orderId: string
+  payer: string
+  payee: string
+  amount: string
+  serviceFee: string
+  type: "货款结算" | "服务费" | "保证金退还"
+  status: "待复核" | "处理中" | "已结算"
+  date: string
+}
+
+export const opsSettlements: OpsSettlement[] = [
+  { id: "JS20260918-032", orderId: "DD20260918-024", payer: "宝武再生资源", payee: "华东再生资源", amount: "¥1,920,000", serviceFee: "¥12,600", type: "货款结算", status: "待复核", date: "2026-09-18" },
+  { id: "JS20260918-029", orderId: "DD20260915-013", payer: "华东钢铁厂", payee: "华东再生资源", amount: "¥1,325,000", serviceFee: "¥8,400", type: "服务费", status: "已结算", date: "2026-09-18" },
+  { id: "JS20260917-026", orderId: "DD20260917-021", payer: "华东特钢集团", payee: "金鼎再生资源", amount: "¥696,800", serviceFee: "¥5,200", type: "货款结算", status: "处理中", date: "2026-09-17" },
+  { id: "JS20260916-021", orderId: "DD20260913-007", payer: "马钢股份", payee: "张建国（自然人）", amount: "¥84,350", serviceFee: "¥1,050", type: "货款结算", status: "已结算", date: "2026-09-16" },
+  { id: "JS20260915-018", orderId: "JJ20260915-005", payer: "平台", payee: "环宇物资回收站", amount: "¥55,000", serviceFee: "—", type: "保证金退还", status: "已结算", date: "2026-09-15" },
+  { id: "JS20260914-014", orderId: "DD20260914-010", payer: "南钢联合", payee: "盛通金属有限公司", amount: "¥1,180,000", serviceFee: "¥7,800", type: "货款结算", status: "处理中", date: "2026-09-14" },
+]
+
+// ---------- 统计查询 ----------
+// 近 6 个月 GMV 与成交量趋势
+export const opsTrend = [
+  { month: "4月", gmv: 132, volume: 5200 },
+  { month: "5月", gmv: 148, volume: 5860 },
+  { month: "6月", gmv: 141, volume: 5540 },
+  { month: "7月", gmv: 163, volume: 6280 },
+  { month: "8月", gmv: 172, volume: 6620 },
+  { month: "9月", gmv: 186, volume: 6980 },
+]
+
+// 品类成交分布
+export const opsCategoryDist = [
+  { name: "重废", value: 46, amount: "8,560 万" },
+  { name: "统废", value: 33, amount: "6,140 万" },
+  { name: "生铁", value: 21, amount: "3,900 万" },
+]
+
+// 成交渠道分布
+export const opsChannelDist = [
+  { name: "竞价回收", value: 52, amount: "9,672 万" },
+  { name: "固定价回收", value: 31, amount: "5,766 万" },
+  { name: "协议回收", value: 17, amount: "3,162 万" },
+]
+
+// 区域成交排行
+export const opsRegionRank = [
+  { region: "江苏·苏州", amount: 5240, orders: 42 },
+  { region: "上海·宝山", amount: 4120, orders: 31 },
+  { region: "江苏·无锡", amount: 3180, orders: 26 },
+  { region: "浙江·嘉兴", amount: 2360, orders: 19 },
+  { region: "安徽·马鞍山", amount: 1680, orders: 14 },
+]
+
+// ---------- 系统配置 ----------
+// 交易参数
+export interface OpsParam {
+  key: string
+  label: string
+  value: string
+  desc: string
+}
+
+export const opsTradeParams: OpsParam[] = [
+  { key: "service_rate", label: "平台交易服务费率", value: "0.6%", desc: "按成交金额向买方收取" },
+  { key: "deposit_rate", label: "竞价保证金比例", value: "8%", desc: "按预算金额缴纳，成交后可抵扣" },
+  { key: "signup_fee", label: "竞价报名费", value: "¥500 / 项目", desc: "报名参与竞价一次性收取" },
+  { key: "settle_period", label: "默认结算周期", value: "T+3 工作日", desc: "货到确认后进入结算流程" },
+  { key: "invoice_limit", label: "自然人年度开票额度", value: "¥500 万", desc: "受金税系统校验，超额禁止开票" },
+]
+
+// 角色权限
+export interface OpsRole {
+  id: string
+  name: string
+  members: number
+  scope: string
+  status: "启用" | "停用"
+}
+
+export const opsRoles: OpsRole[] = [
+  { id: "R01", name: "超级管理员", members: 2, scope: "全平台所有模块", status: "启用" },
+  { id: "R02", name: "交易运营", members: 6, scope: "项目管理 / 订单管理", status: "启用" },
+  { id: "R03", name: "财务专员", members: 4, scope: "财务管理 / 结算复核", status: "启用" },
+  { id: "R04", name: "审核专员", members: 5, scope: "企业审核 / 项目审核", status: "启用" },
+  { id: "R05", name: "客服工单", members: 3, scope: "投诉工单 / 数据查询", status: "停用" },
+]
+
+// 品类字典
+export const opsCategories = [
+  { name: "重废", code: "HW", spec: "厚度≥6mm，单件≥1m", status: "启用" },
+  { name: "统废", code: "TW", spec: "厚度 2-6mm 混合料", status: "启用" },
+  { name: "生铁", code: "ST", spec: "铸造 / 炼钢生铁", status: "启用" },
+  { name: "废铁屑", code: "TX", spec: "机加工屑料", status: "停用" },
+]
+
+// 功能开关
+export interface OpsToggle {
+  key: string
+  label: string
+  desc: string
+  on: boolean
+}
+
+export const opsToggles: OpsToggle[] = [
+  { key: "auto_audit", label: "企业资质自动初审", desc: "系统自动校验营业执照与三证，人工终审", on: true },
+  { key: "bid_realtime", label: "竞价大厅实时报价", desc: "开启后买卖双方可实时看到最新报价", on: true },
+  { key: "risk_alert", label: "交货逾期风控预警", desc: "订单超过约定交货日自动预警运营", on: true },
+  { key: "reverse_invoice", label: "自然人反向开票", desc: "允许采购方为自然人供应商反向开票", on: false },
+]

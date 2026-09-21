@@ -9,7 +9,6 @@ import {
   ChevronDown,
   CircleHelp,
   IdCard,
-  ArrowRight,
   type LucideIcon,
 } from "lucide-react"
 import { useState } from "react"
@@ -114,7 +113,7 @@ export function ReverseInvoicePage({
                 <IdCard className="size-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">{naturalPersonAccount.name}（自然人）</p>
+                <p className="text-sm font-medium text-foreground">{naturalPersonAccount.name}</p>
                 <p className="truncate text-xs text-muted-foreground">身份证 {naturalPersonAccount.idMasked}</p>
               </div>
             </div>
@@ -145,11 +144,6 @@ export function ReverseInvoicePage({
                 <dd className="font-medium tabular-nums text-foreground">{yuan(naturalPersonAccount.usedQuota)}</dd>
               </div>
             </dl>
-
-            <button className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">
-              <ArrowRight className="size-4" />
-              申请提升开票额度
-            </button>
           </div>
         </div>
       </section>
@@ -173,15 +167,15 @@ export function ReverseInvoicePage({
         </div>
       </section>
 
-      {/* 支持自然人下单的采购需求 */}
+      {/* 采购需求 */}
       <section className="mx-auto mt-8 max-w-6xl px-6">
         <SectionTitle
-          title="支持自然人下单的采购需求"
+          title="采购需求"
           action={<span className="text-xs text-muted-foreground">共 {items.length} 条 · 报名/下单前自动校验开票额度</span>}
         />
         {items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-card py-12 text-center text-sm text-muted-foreground">
-            暂无支持自然人下单的采购需求
+            暂无采购需求
           </div>
         ) : (
           <div className="mt-2 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">

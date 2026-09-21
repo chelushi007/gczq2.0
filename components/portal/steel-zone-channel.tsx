@@ -51,6 +51,7 @@ const topNav: { label: string; view: View }[] = [
   { label: "废钢出售", view: "sales" },
   { label: "优质钢厂", view: "mills" },
   { label: "回收网点", view: "networks" },
+  { label: "反向开票", view: "reverse-invoice" },
 ]
 
 const LIST_KINDS: ListKind[] = ["opportunity", "purchase", "sales"]
@@ -113,18 +114,6 @@ export function SteelZoneChannel({
             </button>
           ))}
         </nav>
-        <button
-          onClick={() => go("reverse-invoice")}
-          className={cn(
-            "flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
-            view === "reverse-invoice"
-              ? "border-primary bg-primary/10 text-primary"
-              : "border-primary/40 text-primary hover:bg-primary/5",
-          )}
-        >
-          <Receipt className="size-4" />
-          反向开票
-        </button>
         <button
           onClick={() => setPublishOpen(true)}
           className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

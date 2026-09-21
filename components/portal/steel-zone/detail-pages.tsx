@@ -24,8 +24,6 @@ import {
   ClipboardList,
   Coins,
   PackageCheck,
-  Receipt,
-  IdCard,
   type LucideIcon,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -37,8 +35,6 @@ import {
   latestBid,
   BID_STEP,
   reverseQuotaCheck,
-  naturalPersonAccount,
-  yuan,
   type Listing,
 } from "@/lib/steel-zone-data"
 import { statusStyle, ScrapCard } from "./scrap-card"
@@ -241,31 +237,29 @@ export function ListingDetailPage({
   const accentText = isSale ? "text-emerald-600" : "text-primary"
   const records = isBid ? bidRecords(item) : []
 
-  // 自然人供货：仅回收类需求涉及反向开票额度校验
+  // 涉及反向开票的回收需求：报价/报名前校验开票额度
   const npEnabled = !!item.npEnabled && isRecycle
   const npCheck = npEnabled ? reverseQuotaCheck(item) : null
 
-  const primaryLabel = npEnabled
-    ? isBid
-      ? "以自然人身份报名"
-      : "以自然人身份接单供货"
-    : isBid
-      ? live
-        ? isRecycle
-          ? "立即报价"
-          : "立即出价"
+  const primaryLabel = isBid
+    ? live
+      ? isRecycle
+        ? "立即报价"
+        : "立即出价"
+      : npEnabled
+        ? "立即报名"
         : "报名未开始"
-      : isRecycle
-        ? "接单供货"
-        : "立即购买"
+    : isRecycle
+      ? "接单供货"
+      : "立即购买"
 
-  // 点击报名/报价：自然人反向开票额度不足则拦截
+  // 点击报价/报名：反向开票额度不足以覆盖起拍总价时弹窗拦截
   function handlePrimary() {
     if (npEnabled && npCheck && !npCheck.sufficient) {
       setQuotaModal(true)
       return
     }
-    // 原型：额度充足或非自然人场景下进入正常报名/下单流程
+    // 原型：额度充足或无需校验时进入正常报名/下单流程
   }
 
   return (
@@ -356,55 +350,14 @@ export function ListingDetailPage({
                 </>
               )}
 
-              {/* 自然人身份 + 反向开票额度提示 */}
-              {npEnabled && npCheck && (
-                <div
-                  className={cn(
-                    "mt-auto rounded-lg border px-3 py-2.5 text-xs",
-                    npCheck.sufficient
-                      ? "border-primary/30 bg-primary/5"
-                      : "border-destructive/30 bg-destructive/5",
-                  )}
-                >
-                  <div className="flex items-center gap-1.5 font-medium text-foreground">
-                    <IdCard className="size-3.5 text-primary" />
-                    当前身份：自然人 · {naturalPersonAccount.name}
-                  </div>
-                  <div className="mt-1.5 flex items-center justify-between text-muted-foreground">
-                    <span>本项目起拍总额</span>
-                    <span className="font-semibold tabular-nums text-foreground">{yuan(npCheck.startingTotal)}</span>
-                  </div>
-                  <div className="mt-0.5 flex items-center justify-between text-muted-foreground">
-                    <span>反向开票剩余额度</span>
-                    <span
-                      className={cn(
-                        "font-semibold tabular-nums",
-                        npCheck.sufficient ? "text-foreground" : "text-destructive",
-                      )}
-                    >
-                      {yuan(npCheck.remaining)}
-                    </span>
-                  </div>
-                  {!npCheck.sufficient && (
-                    <p className="mt-1.5 flex items-start gap-1 text-destructive">
-                      <Receipt className="mt-0.5 size-3 shrink-0" />
-                      额度不足，缺口 {yuan(npCheck.shortfall)}，暂无法报名
-                    </p>
-                  )}
-                </div>
-              )}
-
               <button
                 onClick={handlePrimary}
                 disabled={isBid && !live && !npEnabled}
                 className={cn(
-                  "w-full rounded-md py-2.5 text-sm font-medium transition-colors",
-                  npEnabled ? "mt-3" : "mt-auto",
-                  !npEnabled && isBid && !live
+                  "mt-auto w-full rounded-md py-2.5 text-sm font-medium transition-colors",
+                  isBid && !live && !npEnabled
                     ? "cursor-not-allowed bg-muted text-muted-foreground"
-                    : npEnabled && npCheck && !npCheck.sufficient
-                      ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      : "bg-primary text-primary-foreground hover:bg-primary/90",
+                    : "bg-primary text-primary-foreground hover:bg-primary/90",
                 )}
               >
                 {primaryLabel}

@@ -1,11 +1,11 @@
 "use client"
 
-import { AlertTriangle, X, Receipt, TrendingUp } from "lucide-react"
+import { AlertTriangle, X, Receipt } from "lucide-react"
 import { naturalPersonAccount, yuan, type Listing } from "@/lib/steel-zone-data"
 
 /**
- * 自然人反向开票额度不足提醒弹窗
- * 当自然人报名/报价，且本项目起拍总额超过其剩余反向开票额度时展示。
+ * 反向开票额度不足提醒弹窗
+ * 当报名/报价，且本项目起拍总额超过剩余反向开票额度时展示。
  */
 export function ReverseQuotaModal({
   item,
@@ -52,9 +52,9 @@ export function ReverseQuotaModal({
         {/* 正文 */}
         <div className="px-5 py-4">
           <p className="text-sm leading-relaxed text-foreground">
-            以自然人「{naturalPersonAccount.name}」身份报名
+            报名
             <span className="font-medium">「{item.title}」</span>
-            需按起拍总额校验反向开票额度。本项目起拍总额已超出您本年度的剩余可开票额度，系统已自动拦截报名。
+            需按起拍总额校验反向开票额度。本项目起拍总额已超出本年度的剩余可开票额度，系统已自动拦截报名。
           </p>
 
           <dl className="mt-4 space-y-1 rounded-lg border border-border bg-muted/40 p-4 text-sm">
@@ -70,7 +70,7 @@ export function ReverseQuotaModal({
 
           <p className="mt-3 flex items-start gap-1.5 text-xs leading-relaxed text-muted-foreground">
             <Receipt className="mt-0.5 size-3.5 shrink-0 text-primary" />
-            提示：您可申请提升年度开票额度，或选择起拍总额较小的采购需求参与报名。
+            提示：您可选择起拍总额较小的采购需求参与报名，或待开票额度恢复后再参与。
           </p>
         </div>
 
@@ -86,8 +86,8 @@ export function ReverseQuotaModal({
             onClick={onLearnMore}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            <TrendingUp className="size-4" />
-            了解反向开票 / 申请提额
+            <Receipt className="size-4" />
+            了解反向开票
           </button>
         </div>
       </div>

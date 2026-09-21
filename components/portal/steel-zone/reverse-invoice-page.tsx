@@ -169,24 +169,29 @@ export function ReverseInvoicePage({
 
       {/* 采购需求 */}
       <section className="mx-auto mt-8 max-w-6xl px-6">
-        <SectionTitle
-          title="采购需求"
-          action={<span className="text-xs text-muted-foreground">共 {items.length} 条 · 报名/下单前自动校验开票额度</span>}
-        />
+        <SectionTitle title="采购需求" />
         {items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-card py-12 text-center text-sm text-muted-foreground">
             暂无采购需求
           </div>
         ) : (
-          <div className="mt-2 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-            {items.map((it) => (
-              <ScrapCard key={it.id} item={it} onClick={() => onOpen(it.id)} />
-            ))}
-          </div>
+          <>
+            <div className="mt-2 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {items.map((it) => (
+                <ScrapCard key={it.id} item={it} onClick={() => onOpen(it.id)} />
+              ))}
+            </div>
+            <div className="mt-6 flex justify-center">
+              <button className="flex items-center gap-1.5 rounded-md border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:border-primary/50 hover:text-primary">
+                查看更多采购需求
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          </>
         )}
       </section>
 
-      {/* 常见问题 */}
+      {/* 常��问题 */}
       <section className="mx-auto mt-8 max-w-6xl px-6">
         <SectionTitle title="常见问题" />
         <div className="mt-2 space-y-2">

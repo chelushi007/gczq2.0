@@ -41,8 +41,9 @@ import { SteelListPage, type ListKind } from "./steel-zone/list-page"
 import { QualityMills, QualityNetworks } from "./steel-zone/quality-partners"
 import { PartnersListPage, type PartnerKind } from "./steel-zone/partners-list-page"
 import { ListingDetailPage, MillDetailPage, NetworkDetailPage } from "./steel-zone/detail-pages"
+import { ReverseInvoicePage } from "./steel-zone/reverse-invoice-page"
 
-type View = "home" | ListKind | PartnerKind
+type View = "home" | "reverse-invoice" | ListKind | PartnerKind
 const topNav: { label: string; view: View }[] = [
   { label: "首页", view: "home" },
   { label: "废钢商机", view: "opportunity" },
@@ -113,6 +114,18 @@ export function SteelZoneChannel({
           ))}
         </nav>
         <button
+          onClick={() => go("reverse-invoice")}
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition-colors",
+            view === "reverse-invoice"
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-primary/40 text-primary hover:bg-primary/5",
+          )}
+        >
+          <Receipt className="size-4" />
+          反向开票
+        </button>
+        <button
           onClick={() => setPublishOpen(true)}
           className="flex shrink-0 items-center gap-1.5 rounded-md bg-primary px-3.5 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
@@ -123,12 +136,19 @@ export function SteelZoneChannel({
 
       {detail ? (
         detail.type === "listing" ? (
-          <ListingDetailPage id={detail.id} onBack={closeDetail} onOpen={openListing} />
+          <ListingDetailPage
+            id={detail.id}
+            onBack={closeDetail}
+            onOpen={openListing}
+            onReverseInvoice={() => go("reverse-invoice")}
+          />
         ) : detail.type === "mill" ? (
           <MillDetailPage id={detail.id} onBack={closeDetail} />
         ) : (
           <NetworkDetailPage id={detail.id} onBack={closeDetail} />
         )
+      ) : view === "reverse-invoice" ? (
+        <ReverseInvoicePage onBack={() => go("home")} onOpen={openListing} />
       ) : LIST_KINDS.includes(view as ListKind) ? (
         <SteelListPage kind={view as ListKind} onBack={() => go("home")} onOpen={openListing} />
       ) : PARTNER_KINDS.includes(view as PartnerKind) ? (
@@ -227,7 +247,7 @@ export function SteelZoneChannel({
       <NewsService />
 
       {/* 9. 特色服务 */}
-      <FeaturedServices />
+      <FeaturedServices onReverse={() => go("reverse-invoice")} />
 
       {/* 10. 合作企业 */}
       <PartnerCompanies />
@@ -606,17 +626,22 @@ const serviceIcon: Record<string, LucideIcon> = {
   leaf: Leaf,
 }
 
-function FeaturedServices() {
+function FeaturedServices({ onReverse }: { onReverse?: () => void }) {
   return (
     <section className="mx-auto max-w-6xl px-6">
       <SectionTitle title="特色服务" />
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         {featuredServices.map((s) => {
           const Icon = serviceIcon[s.icon] ?? ShieldCheck
+          const clickable = s.key === "reverse"
           return (
             <div
               key={s.key}
-              className="group flex flex-col items-center rounded-xl border border-border bg-card p-4 text-center transition-colors hover:border-primary/50"
+              onClick={clickable ? onReverse : undefined}
+              className={cn(
+                "group flex flex-col items-center rounded-xl border border-border bg-card p-4 text-center transition-colors hover:border-primary/50",
+                clickable && "cursor-pointer",
+              )}
             >
               <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
                 <Icon className="size-5" />

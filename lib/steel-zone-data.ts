@@ -109,7 +109,7 @@ export const demandRecos: DemandReco[] = [
   { id: "DS08", type: "sales", category: "heavy", province: "安徽", title: "马钢周边重废现货出售", price: 2540, unit: "元/吨", status: "询价中", spec: "重型统料", place: "安徽·马鞍山" },
   // —— 其余省份覆盖（保证地图悬停联动）——
   { id: "DR09", type: "purchase", category: "medium", province: "福建", title: "三钢闽光中型废钢采购", price: 2560, unit: "元/吨", status: "竞价中", spec: "中废统料", place: "福建·三明" },
-  { id: "DR10", type: "purchase", category: "heavy", province: "四川", title: "攀成钢重型废钢回收 月需 2000 吨", price: 2600, unit: "元/吨", status: "固定价", spec: "重型统料", place: "四川·成都" },
+  { id: "DR10", type: "purchase", category: "heavy", province: "四川", title: "攀成钢重型废钢回收 月需 2000 ���", price: 2600, unit: "元/吨", status: "固定价", spec: "重型统料", place: "四川·成都" },
   { id: "DS09", type: "sales", category: "heavy", province: "内蒙古", title: "包钢周边重废现货出售", price: 2520, unit: "元/吨", status: "竞价中", spec: "重型统料", place: "内蒙古·包头" },
   { id: "DR11", type: "purchase", category: "shear", province: "天津", title: "天钢剪切料采购 就近提货", price: 2700, unit: "元/吨", status: "竞价中", spec: "1.2m 剪切", place: "天津·东丽" },
   { id: "DR12", type: "purchase", category: "alloy", province: "上海", title: "宝钢合金钢边角料回收", price: 3480, unit: "元/吨", status: "询价中", spec: "低合金", place: "上海·宝山" },
@@ -230,6 +230,7 @@ export type Listing = {
   bids?: number
   endsIn?: string
   company: string
+  npEnabled?: boolean // 是否支持自然人下单/供货（涉及反向开票）
 }
 
 export const listings: Listing[] = [
@@ -242,13 +243,16 @@ export const listings: Listing[] = [
   { id: "B2606", title: "太钢生铁铸铁竞价回收", category: "生铁铸铁", catKey: "pig", channel: "竞价回收", price: 2900, unit: "元/吨", quantity: "1200 吨", spec: "机件生铁", region: "山西·太原", status: "竞价中", bids: 11, endsIn: "06:02:40", company: "太钢集团" },
   { id: "B2607", title: "鄂钢合金钢边角竞价回收", category: "合金钢", catKey: "alloy", channel: "竞价回收", price: 3450, unit: "元/吨", quantity: "500 吨", spec: "低合金", region: "湖北·黄石", status: "报名中", bids: 0, endsIn: "2 天后开始", company: "鄂城钢铁" },
   { id: "B2608", title: "莱芜不锈钢废料竞价回收", category: "不锈钢", catKey: "stainless", channel: "竞价回收", price: 8300, unit: "元/吨", quantity: "200 吨", spec: "304 统料", region: "山东·济南", status: "竞价中", bids: 15, endsIn: "01:40:12", company: "山东钢铁" },
+  // —— 支持自然人供货的竞价回收（报名中）——
+  { id: "B2609", title: "华东钢铁厂重型废钢竞价回收（支持自然人供货）", category: "重型废钢", catKey: "heavy", channel: "竞价回收", price: 2650, unit: "元/吨", quantity: "60 吨", spec: "≥6mm 一级料", region: "河北·唐山", status: "报名中", bids: 0, endsIn: "1 天后开始", company: "华东钢铁厂", npEnabled: true },
+  { id: "B2610", title: "唐山中型废钢竞价回收（自然人可报名）", category: "中型废钢", catKey: "medium", channel: "竞价回收", price: 2560, unit: "元/吨", quantity: "40 吨", spec: "中废统料", region: "河北·唐山", status: "报名中", bids: 0, endsIn: "2 天后开始", company: "华东钢铁厂", npEnabled: true },
 
   // —— 固定价回收（8）——
-  { id: "F2611", title: "韶钢轻薄料固定价回收", category: "轻薄料", catKey: "light", channel: "固定价回收", price: 2380, unit: "元/吨", quantity: "800 吨", spec: "轻薄打包", region: "广东·韶关", status: "固定价", company: "宝武韶钢" },
+  { id: "F2611", title: "韶钢轻薄料固定价回收（支持自然人供货）", category: "轻薄料", catKey: "light", channel: "固定价回收", price: 2380, unit: "元/吨", quantity: "30 吨", spec: "轻薄打包", region: "广东·韶关", status: "固定价", company: "宝武韶钢", npEnabled: true },
   { id: "F2612", title: "太钢生铁铸铁固定价回收", category: "生铁铸铁", catKey: "pig", channel: "固定价回收", price: 2900, unit: "元/吨", quantity: "1200 吨", spec: "机件生铁", region: "山西·太原", status: "固定价", company: "太钢集团" },
   { id: "F2613", title: "安钢中废统料固定价回收", category: "中型废钢", catKey: "medium", channel: "固定价回收", price: 2560, unit: "元/吨", quantity: "1000 吨", spec: "中废混合", region: "河南·安阳", status: "固定价", company: "安阳钢铁" },
   { id: "F2614", title: "唐山重废统料固定价回收", category: "重型废钢", catKey: "heavy", channel: "固定价回收", price: 2620, unit: "元/吨", quantity: "1800 吨", spec: "重型统料", region: "河北·唐山", status: "固定价", company: "华东钢铁厂" },
-  { id: "F2615", title: "无锡钢屑刨花固定价回收", category: "钢屑刨花", catKey: "turning", channel: "固定价回收", price: 1980, unit: "元/吨", quantity: "600 吨", spec: "压块屑", region: "江苏·无锡", status: "固定价", company: "锡钢再生" },
+  { id: "F2615", title: "无锡钢屑刨花固定价回收（支持自然人供货）", category: "钢屑刨花", catKey: "turning", channel: "固定价回收", price: 1980, unit: "元/吨", quantity: "25 吨", spec: "压块屑", region: "江苏·无锡", status: "固定价", company: "锡钢再生", npEnabled: true },
   { id: "F2616", title: "济南中型废钢固定价回收", category: "中型废钢", catKey: "medium", channel: "固定价回收", price: 2540, unit: "元/吨", quantity: "1500 吨", spec: "中废统料", region: "山东·济南", status: "固定价", company: "山东钢铁" },
   { id: "F2617", title: "邯郸剪切料固定价回收", category: "剪切料", catKey: "shear", channel: "固定价回收", price: 2700, unit: "元/吨", quantity: "1000 吨", spec: "1m 剪切", region: "河北·邯郸", status: "固定价", company: "河钢邯钢" },
   { id: "F2618", title: "黄石合金钢固定价回收", category: "合金钢", catKey: "alloy", channel: "固定价回收", price: 3420, unit: "元/吨", quantity: "400 吨", spec: "低合金", region: "湖北·黄石", status: "固定价", company: "鄂城钢铁" },
@@ -378,7 +382,7 @@ export const qualityMills: QualityMill[] = [
   },
   {
     id: "M04", name: "本钢集团 · 板材厂", image: "/images/mill-1.png", region: "辽宁·本溪", process: "长流程 / 转炉",
-    tags: ["月采≥5万吨", "生铁铸铁", "季度框采"], annualDemand: "年采废钢 60 万吨",
+    tags: ["月采≥5万吨", "生铁铸���", "季度框采"], annualDemand: "年采废钢 60 万吨",
     desc: "东北老牌钢企，转炉配吃废钢，长期采购生铁铸铁与重废，支持季度框架采购。", verified: true,
   },
   {
@@ -457,4 +461,82 @@ export const networkJoinSteps: { step: string; title: string; desc: string }[] =
   { step: "03", title: "授牌认证挂网", desc: "通过后授予优选网点认证" },
   { step: "04", title: "区域需求对接", desc: "获取钢厂与平台采购需求" },
   { step: "05", title: "运营扶持赋能", desc: "物流、金融、结算全程扶持" },
+]
+
+/* ------------------------------------------------------------------ */
+/* 反向开票（面向自然人供货）                                          */
+/* ------------------------------------------------------------------ */
+
+// 当前登录自然人的反向开票额度账户（原型数据）
+export const naturalPersonAccount = {
+  name: "张建国",
+  idMasked: "3201 **** **** 1234",
+  annualQuota: 5_000_000, // 年度反向开票额度（元）
+  usedQuota: 4_880_000, // 本年已开票金额（元）
+  remainingQuota: 120_000, // 剩余可开票额度（元）
+  taxRate: 0.03, // 综合税负（代征）
+}
+
+// 解析挂牌数量中的吨位（支持“1500 吨 / 1.2 万吨”）
+export function listingTons(l: Listing): number {
+  const m = l.quantity.match(/([\d,.]+)\s*(万)?/)
+  if (!m) return 0
+  const n = Number.parseFloat(m[1].replace(/,/g, ""))
+  if (Number.isNaN(n)) return 0
+  return m[2] === "万" ? n * 10000 : n
+}
+
+// 反向开票额度校验：起拍总额是否超过剩余额度
+export function reverseQuotaCheck(l: Listing) {
+  const tons = listingTons(l)
+  const startingTotal = l.price * tons // 起拍总额 = 起拍单价 × 数量
+  const remaining = naturalPersonAccount.remainingQuota
+  const sufficient = remaining >= startingTotal
+  const shortfall = Math.max(0, startingTotal - remaining)
+  return { tons, startingTotal, remaining, sufficient, shortfall }
+}
+
+export function yuan(n: number): string {
+  return "¥" + n.toLocaleString("zh-CN")
+}
+
+// 支持自然人下单/供货的采购需求
+export function npListings(): Listing[] {
+  return listings.filter((l) => l.npEnabled)
+}
+
+// 反向开票业务介绍：一句话定义 + 段落说明
+export const reverseIntro = {
+  tagline: "钢厂为自然人代开发票，破解无票采购难题",
+  paragraphs: [
+    "反向开票是指资源回收企业（钢厂）从自然人处收购废钢等再生资源时，由收购方（钢厂）作为开票方，向税务机关为出售方（自然人）代开增值税发票的一种合规机制。",
+    "长期以来，散户、个体经营者向钢厂供货时无法自行开具发票，导致钢厂“有货无票”、难以进项抵扣。反向开票由平台与钢厂协同完成开票与代征税款，让自然人也能合规供货、及时结算。",
+    "平台对接金税系统，对每位自然人供货方进行年度开票额度校验：当单笔交易的起拍/成交金额超出剩余额度时，系统将自动拦截报名或下单，保障交易合规、避免超额开票风险。",
+  ],
+}
+
+// 反向开票流程
+export const reverseSteps: { step: string; title: string; desc: string }[] = [
+  { step: "01", title: "实名认证", desc: "自然人完成身份实名与银行卡绑定" },
+  { step: "02", title: "额度核定", desc: "平台对接金税系统核定年度开票额度" },
+  { step: "03", title: "报名/下单", desc: "选择支持自然人的采购需求并报名供货" },
+  { step: "04", title: "验质过磅", desc: "货到验质检斤，确认实际成交金额" },
+  { step: "05", title: "反向开票", desc: "钢厂为自然人代开发票并代征税款" },
+  { step: "06", title: "货款结算", desc: "平台资金存管，税后货款打入本人账户" },
+]
+
+// 反向开票优势
+export const reverseAdvantages: { title: string; desc: string; icon: string }[] = [
+  { title: "合规供货", desc: "自然人无需办照即可合规向钢厂供货", icon: "shield" },
+  { title: "代开代征", desc: "钢厂代开发票、平台代征税款，省心省力", icon: "receipt" },
+  { title: "额度透明", desc: "年度额度实时可查，超额自动提醒拦截", icon: "gauge" },
+  { title: "资金存管", desc: "货款平台存管，税后款项按约到账", icon: "wallet" },
+]
+
+// 反向开票常见问题
+export const reverseFaq: { q: string; a: string }[] = [
+  { q: "哪些人可以使用反向开票？", a: "完成平台实名认证的自然人（散户、个体供货方）向入驻钢厂供应废钢等再生资源时均可使用。" },
+  { q: "年度开票额度是多少？", a: "依据金税系统规定，单个自然人年度反向开票额度上限为 500 万元，平台按已开票金额实时扣减。" },
+  { q: "额度不足会怎样？", a: "当交易起拍/成交金额超过剩余额度时，系统会在报名或下单环节自动拦截并提示，您可申请提额或选择金额较小的需求。" },
+  { q: "税款如何处理？", a: "由平台按综合征收率代征税款，税后货款打入本人银行账户，全程线上可查。" },
 ]

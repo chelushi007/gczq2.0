@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Wallet, RotateCcw } from "lucide-react"
+import { Search, Wallet, RotateCcw, GitBranch } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { PageHeader } from "@/components/shared/page-header"
 import { StatusPill, statusTone } from "@/components/shared/status-pill"
@@ -9,6 +9,7 @@ import { DataTable, FilterBar, FilterChip, type Column } from "@/components/shar
 import { orderList, type OrderItem } from "@/lib/steel-data"
 import { OrderFulfill, type FulfillPerspective } from "@/components/steel-mill/order-fulfill"
 import { OrderDetail } from "@/components/steel-mill/order-detail"
+import { OrderTrace } from "@/components/steel-mill/order-trace"
 
 const tabs = ["全部", "履约中", "履约结束"]
 const channelTone: Record<string, "blue" | "amber" | "violet"> = {
@@ -29,6 +30,7 @@ export function MillOrders({ perspective = "purchaser" }: { perspective?: Fulfil
   const [keyword, setKeyword] = useState("")
   const [fulfilling, setFulfilling] = useState<OrderItem | null>(null)
   const [detail, setDetail] = useState<OrderItem | null>(null)
+  const [tracing, setTracing] = useState<OrderItem | null>(null)
 
   const rows = orderList.filter((o) => {
     if (tab !== "全部" && o.status !== tab) return false
@@ -92,12 +94,22 @@ export function MillOrders({ perspective = "purchaser" }: { perspective?: Fulfil
             履约
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" onClick={() => setDetail(r)}>
-            详情
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => setDetail(r)}>
+              详情
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setTracing(r)}>
+              <GitBranch className="size-3.5" />
+              溯源
+            </Button>
+          </div>
         ),
     },
   ]
+
+  if (tracing) {
+    return <OrderTrace item={tracing} onBack={() => setTracing(null)} />
+  }
 
   if (fulfilling) {
     return <OrderFulfill item={fulfilling} perspective={perspective} onBack={() => setFulfilling(null)} />

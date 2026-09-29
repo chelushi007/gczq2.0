@@ -70,7 +70,8 @@ interface TraceEvent {
 }
 
 interface TraceBatch {
-  nodeId: string // 供应商节点
+  nodeId: string // 该批次对应的主体节点（供应商 / 加工基地）
+  caption?: string // 批次补充说明（如来源）
   events: TraceEvent[]
 }
 
@@ -79,11 +80,23 @@ interface TraceStage {
   title: string
   subtitle: string
   fromIds: string[]
-  toId: string
+  toIds: string[]
   qtyOut: string
   lossRate: string
-  batches?: TraceBatch[] // 多供应商：按供应商分批
+  batches?: TraceBatch[] // 多来源：按主体分批
   events?: TraceEvent[]
+}
+
+interface SupplierProfile {
+  name: string
+  type: "企业" | "自然人"
+  region: string
+  license?: string
+  ratio: number
+  plate: string
+  date: string
+  inv: string
+  processor: { name: string; region: string; license: string; code: string }
 }
 
 const nodeStyle: Record<NodeKind, { icon: LucideIcon; color: string; bg: string; ring: string; fill: string; stroke: string }> = {
@@ -106,40 +119,100 @@ function parseQty(q: string): number {
 
 function buildTrace(item: OrderItem) {
   const millQty = parseQty(item.qty)
-  const processorIn = millQty / 0.92 // 加工损耗 8%
-  const recyclerConfirm = processorIn
+  const recyclerConfirm = millQty / 0.92 // 加工损耗 8%
   const supplierGross = recyclerConfirm / 0.99 // 扣杂 1%
 
-  // 固定价订单：钢厂订单的供应商来源可以有多个；其他方式默认单一来源
+  // 固定价订单：钢厂订单的供应商来源可以有多个（企业 / 自然人），每家供应商的货对应不同加工基地；其他方式默认单一来源
   const multi = item.channel === "固定价"
-  const supplierProfiles = multi
-    ? [
-        { name: "张建国（自然人）", region: "江苏·无锡 惠山区", ratio: 0.45, plate: "苏B·7K***", date: "08-28", inv: "0417" },
-        { name: "李文涛（自然人）", region: "江苏·无锡 江阴市", ratio: 0.35, plate: "苏B·2D***", date: "08-29", inv: "0418" },
-        { name: "无锡宏运物资经营部", region: "江苏·无锡 新吴区", ratio: 0.2, plate: "苏B·9F***", date: "08-30", inv: "0421" },
-      ]
-    : [{ name: "张建国（自然人）", region: "江苏·无锡 惠山区", ratio: 1, plate: "苏B·7K***", date: "08-28", inv: "0417" }]
+  const allProfiles: SupplierProfile[] = [
+    {
+      name: "无锡宏运物资有限公司",
+      type: "企业",
+      region: "江苏·无锡 新吴区",
+      license: "统一社会信用代码 91320214MA***",
+      ratio: 0.45,
+      plate: "苏B·9F***",
+      date: "08-28",
+      inv: "0417",
+      processor: { name: "锡东废钢改制加工基地", region: "江苏·无锡 锡山区", license: "废钢加工准入企业 · 工信部第 9 批", code: "XD" },
+    },
+    {
+      name: "张建国",
+      type: "自然人",
+      region: "江苏·无锡 惠山区",
+      ratio: 0.35,
+      plate: "苏B·7K***",
+      date: "08-29",
+      inv: "0418",
+      processor: { name: "惠山绿源再生加工基地", region: "江苏·无锡 惠山区", license: "废钢加工准入企业 · 工信部第 7 批", code: "HS" },
+    },
+    {
+      name: "李文涛",
+      type: "自然人",
+      region: "江苏·无锡 江阴市",
+      ratio: 0.2,
+      plate: "苏B·2D***",
+      date: "08-30",
+      inv: "0421",
+      processor: { name: "江阴临港废钢加工中心", region: "江苏·无锡 江阴市", license: "废钢加工准入企业 · 工信部第 10 批", code: "JY" },
+    },
+  ]
+  const supplierProfiles = multi ? allProfiles : [{ ...allProfiles[1], ratio: 1 }]
 
   const suppliers: TraceNode[] = supplierProfiles.map((p, i) => {
-    const gross = supplierGross * p.ratio
     const confirm = recyclerConfirm * p.ratio
     const seq = String(i + 1).padStart(2, "0")
+    const d8 = p.date.replace("-", "")
+    const isCompany = p.type === "企业"
     return {
       id: `sup${i + 1}`,
       kind: "supplier",
-      role: p.name.includes("自然人") ? "供应商 · 自然人" : "供应商 · 个体经营",
+      role: `供应商 · ${p.type}`,
       name: p.name,
       region: p.region,
+      license: p.license,
       qty: tons(confirm),
-      docs: [
-        { label: "供货单", no: `GH-2026${p.date.replace("-", "")}-0${seq}` },
-        { label: "磅单", no: `BD-2026${p.date.replace("-", "")}-03${seq}` },
-        { label: "反向开票", no: `3200 ****** ${p.inv}` },
-      ],
-      vouchers: ["磅单照片", "车辆车牌照片", "验质照片", "身份证明"],
+      docs: isCompany
+        ? [
+            { label: "供货合同", no: `HT-2026${d8}-0${seq}` },
+            { label: "磅单", no: `BD-2026${d8}-03${seq}` },
+            { label: "增值税发票", no: `3200 ****** ${p.inv}` },
+          ]
+        : [
+            { label: "供货单", no: `GH-2026${d8}-0${seq}` },
+            { label: "磅单", no: `BD-2026${d8}-03${seq}` },
+            { label: "反向开票", no: `3200 ****** ${p.inv}` },
+          ],
+      vouchers: isCompany
+        ? ["营业执照", "磅单照片", "车辆车牌照片", "验质照片", "发票影像"]
+        : ["身份证明", "磅单照片", "车辆车牌照片", "验质照片"],
     }
   })
-  void supplierGross
+
+  // 每家供应商对应一个加工基地：回收商按来源分别委托改制
+  const processors: TraceNode[] = supplierProfiles.map((p, i) => {
+    const inQty = recyclerConfirm * p.ratio
+    const outQty = millQty * p.ratio
+    const c = p.processor.code
+    return {
+      id: `proc${i + 1}`,
+      kind: "processor",
+      role: "加工基地 · 受托方",
+      name: p.processor.name,
+      region: p.processor.region,
+      license: p.processor.license,
+      qty: tons(outQty),
+      docs: [
+        { label: "委托加工单", no: `WT-20260831-${c}${i + 1}` },
+        { label: "入场磅单", no: `BD-20260831-${c}0${i + 1}` },
+        { label: "加工记录单", no: `JG-20260902-${c}0${i + 1}` },
+        { label: "发货单", no: `FH-20260906-${c}0${i + 1}` },
+      ],
+      vouchers: ["准入企业证书", "委托加工协议", "加工现场照片", "出库磅单", "GPS 运输轨迹"],
+    }
+  })
+  const processorIn = (i: number) => recyclerConfirm * supplierProfiles[i].ratio
+  const processorOut = (i: number) => millQty * supplierProfiles[i].ratio
 
   const recycler: TraceNode = {
     id: "rec",
@@ -152,25 +225,12 @@ function buildTrace(item: OrderItem) {
     docs: [
       { label: "采购需求", no: "F2615" },
       { label: "入库汇总单", no: "RK-20260830-007" },
-      { label: "委托加工单", no: "WT-20260831-012" },
+      {
+        label: processors.length > 1 ? `委托加工单 ×${processors.length}` : "委托加工单",
+        no: processors.length > 1 ? `${processors[0].docs[0].no} 等` : processors[0].docs[0].no,
+      },
     ],
     vouchers: ["回收备案证", "入库汇总表", "委托加工协议"],
-  }
-
-  const processor: TraceNode = {
-    id: "proc",
-    kind: "processor",
-    role: "加工基地 · 受托方",
-    name: "锡东废钢改制加工基地",
-    region: "江苏·无锡 锡山区",
-    license: "废钢加工准入企业 · 工信部第 9 批",
-    qty: tons(millQty),
-    docs: [
-      { label: "入场磅单", no: "BD-20260831-0089" },
-      { label: "加工记录单", no: "JG-20260902-015" },
-      { label: "发货单", no: "FH-20260906-004" },
-    ],
-    vouchers: ["准入企业证书", "加工现场照片", "出库磅单", "GPS 运输轨迹"],
   }
 
   const mill: TraceNode = {
@@ -188,7 +248,7 @@ function buildTrace(item: OrderItem) {
     vouchers: ["到厂磅单", "验质报告", "入库单", "结算凭证"],
   }
 
-  const nodes: TraceNode[] = [...suppliers, recycler, processor, mill]
+  const nodes: TraceNode[] = [...suppliers, recycler, ...processors, mill]
   const nodeMap = Object.fromEntries(nodes.map((n) => [n.id, n])) as Record<string, TraceNode>
 
   const edges: TraceEdge[] = [
@@ -199,8 +259,20 @@ function buildTrace(item: OrderItem) {
       note: "扣杂 1.0%",
       docNo: s.docs[1].no,
     })),
-    { from: recycler.id, to: processor.id, qty: tons(recyclerConfirm), note: "委托加工", docNo: "WT-20260831-012" },
-    { from: processor.id, to: mill.id, qty: tons(millQty), note: "直发钢厂 · 损耗 8%", docNo: "FH-20260906-004" },
+    ...processors.map((pr, i) => ({
+      from: recycler.id,
+      to: pr.id,
+      qty: tons(processorIn(i)),
+      note: `委托加工 · 来源 ${suppliers[i].name}`,
+      docNo: pr.docs[0].no,
+    })),
+    ...processors.map((pr) => ({
+      from: pr.id,
+      to: mill.id,
+      qty: pr.qty,
+      note: "直发钢厂 · 损耗 8%",
+      docNo: pr.docs[3].no,
+    })),
   ]
 
   const stages: TraceStage[] = [
@@ -209,22 +281,27 @@ function buildTrace(item: OrderItem) {
       title: multi ? `第一段 · ${suppliers.length} 家供应商分批供货至回收商` : "第一段 · 供应商供货至回收商",
       subtitle: "供应商向回收商出售废钢原料，回收商逐批过磅验质并反向开票",
       fromIds: suppliers.map((s) => s.id),
-      toId: recycler.id,
+      toIds: [recycler.id],
       qtyOut: tons(recyclerConfirm),
       lossRate: "扣杂 1.0%",
       batches: suppliers.map((s, i) => {
         const p = supplierProfiles[i]
         const gross = supplierGross * p.ratio
         const confirm = recyclerConfirm * p.ratio
+        const isCompany = p.type === "企业"
         return {
           nodeId: s.id,
+          caption: `${p.type} · 对应加工基地 ${p.processor.name}`,
           events: [
             {
               time: `2026-${p.date} 09:12`,
-              title: "供应商接单供货",
-              desc: "供应商在回收商固定价采购需求下接单供货",
+              title: isCompany ? "企业供应商签约供货" : "自然人供应商接单供货",
+              desc: isCompany
+                ? "企业供应商与回收商签订供货合同，按固定价采购需求供货"
+                : "自然人供应商在回收商固定价采购需求下接单供货",
               icon: ClipboardList,
               docs: [s.docs[0], { label: "采购需求", no: "F2615" }],
+              vouchers: isCompany ? ["营业执照", "供货合同"] : undefined,
             },
             {
               time: `2026-${p.date} 14:40`,
@@ -244,8 +321,10 @@ function buildTrace(item: OrderItem) {
             },
             {
               time: `2026-${p.date} 17:30`,
-              title: "反向开票 · 结算",
-              desc: "回收商为供应商代开发票并代征税款，税后货款打入本人账户",
+              title: isCompany ? "企业开票 · 结算" : "反向开票 · 结算",
+              desc: isCompany
+                ? "企业供应商向回收商开具增值税发票，货款转入企业对公账户"
+                : "回收商为自然人供应商代开发票并代征税款，税后货款打入本人账户",
               icon: Receipt,
               docs: [s.docs[2]],
               vouchers: ["电子发票", "付款回单"],
@@ -256,48 +335,49 @@ function buildTrace(item: OrderItem) {
     },
     {
       key: "s2",
-      title: "第二段 · 回收商委托加工基地改制加工",
-      subtitle: "回收商将汇总原料运至加工基地，委托剪切 / 打包改制为炉料",
+      title: multi ? `第二段 · 回收商按来源分别委托 ${processors.length} 家加工基地改制` : "第二段 · 回收商委托加工基地改制加工",
+      subtitle: "回收商将各供应商原料分别运至对应加工基地，委托剪切 / 打包改制为炉料",
       fromIds: [recycler.id],
-      toId: processor.id,
+      toIds: processors.map((pr) => pr.id),
       qtyOut: tons(millQty),
       lossRate: "加工损耗 8.0%",
-      events: [
-        {
-          time: "2026-08-31 08:30",
-          title: "签订委托加工单",
-          desc: "回收商与加工基地签订委托加工协议，约定改制为 ≤1m 剪切料",
-          icon: FileCheck2,
-          docs: [{ label: "委托单号", no: "WT-20260831-012" }],
-          vouchers: ["委托加工协议"],
-        },
-        {
-          time: "2026-08-31 13:15",
-          title: "原料入场过磅",
-          desc: `加工基地入场过磅，净重 ${tons(recyclerConfirm)}，与回收商入库汇总一致`,
-          icon: Scale,
-          docs: [
-            { label: "磅单号", no: "BD-20260831-0089" },
-            { label: "入库汇总单", no: "RK-20260830-007" },
-          ],
-          vouchers: ["入场磅单", "运输轨迹"],
-        },
-        {
-          time: "2026-09-02 17:40",
-          title: "改制加工完成",
-          desc: `剪切 / 打包完成，产出 ≤1m 剪切料 ${tons(millQty)}，加工损耗 ${tons(recyclerConfirm - millQty)}`,
-          icon: Wrench,
-          docs: [{ label: "加工记录单", no: "JG-20260902-015" }],
-          vouchers: ["加工现场照片 ×6", "加工记录单"],
-        },
-      ],
+      batches: processors.map((pr, i) => ({
+        nodeId: pr.id,
+        caption: `来源 · ${suppliers[i].name}`,
+        events: [
+          {
+            time: `2026-08-31 ${String(8 + i).padStart(2, "0")}:30`,
+            title: "签订委托加工单",
+            desc: `回收商与 ${pr.name} 签订委托加工协议，约定改制为 ≤1m 剪切料`,
+            icon: FileCheck2,
+            docs: [pr.docs[0]],
+            vouchers: ["委托加工协议"],
+          },
+          {
+            time: `2026-08-31 1${3 + i}:15`,
+            title: "原料入场过磅",
+            desc: `加工基地入场过磅，净重 ${tons(processorIn(i))}，与该来源入库确认数一致`,
+            icon: Scale,
+            docs: [pr.docs[1], { label: "入库汇总单", no: "RK-20260830-007" }],
+            vouchers: ["入场磅单", "运输轨迹"],
+          },
+          {
+            time: `2026-09-0${2 + (i % 2)} 17:40`,
+            title: "改制加工完成",
+            desc: `剪切 / 打包完成，产出 ≤1m 剪切料 ${tons(processorOut(i))}，加工损耗 ${tons(processorIn(i) - processorOut(i))}`,
+            icon: Wrench,
+            docs: [pr.docs[2]],
+            vouchers: ["加工现场照片 ×6", "加工记录单"],
+          },
+        ],
+      })),
     },
     {
       key: "s3",
-      title: "第三段 · 加工基地直发钢厂",
-      subtitle: "加工完成后由加工基地直接向钢厂发货，回收商为交易主体",
-      fromIds: [processor.id],
-      toId: mill.id,
+      title: multi ? `第三段 · ${processors.length} 家加工基地分别直发钢厂` : "第三段 · 加工基地直发钢厂",
+      subtitle: "加工完成后由各加工基地直接向钢厂发货，回收商为交易主体",
+      fromIds: processors.map((pr) => pr.id),
+      toIds: [mill.id],
       qtyOut: item.qty,
       lossRate: "扣杂 0%",
       events: [
@@ -311,25 +391,24 @@ function buildTrace(item: OrderItem) {
             { label: "成交单价", no: item.unitPrice },
           ],
         },
-        {
-          time: "2026-09-06 07:45",
-          title: "加工基地发货",
-          desc: "加工基地装车出库，按钢厂要求直发张家港厂区",
-          icon: Truck,
-          docs: [
-            { label: "发货单号", no: "FH-20260906-004" },
-            { label: "运输车牌", no: "苏E·3M***" },
-          ],
-          vouchers: ["出库磅单", "装车照片 ×3", "GPS 运输轨迹"],
-        },
-        {
-          time: "2026-09-06 15:20",
-          title: "钢厂到厂过磅",
-          desc: `钢厂磅房过磅，净重 ${item.qty}，与发货数量一致`,
-          icon: Scale,
-          docs: [{ label: "磅单号", no: "GC-20260906-1187" }],
-          vouchers: ["到厂磅单"],
-        },
+        ...processors.flatMap((pr, i) => [
+          {
+            time: `2026-09-06 ${String(7 + i).padStart(2, "0")}:45`,
+            title: `${pr.name} 发货`,
+            desc: `装车出库 ${pr.qty}，按钢厂要求直发张家港厂区`,
+            icon: Truck,
+            docs: [pr.docs[3], { label: "运输车牌", no: `苏E·${3 + i}M***` }],
+            vouchers: ["出库磅单", "装车照片 ×3", "GPS 运输轨迹"],
+          },
+          {
+            time: `2026-09-06 1${4 + i}:20`,
+            title: `钢厂到厂过磅 · ${pr.name}`,
+            desc: `钢厂磅房过磅，净重 ${pr.qty}，与发货数量一致`,
+            icon: Scale,
+            docs: [{ label: "磅单号", no: `GC-20260906-118${7 + i}` }],
+            vouchers: ["到厂磅单"],
+          },
+        ]),
         {
           time: "2026-09-06 16:30",
           title: "钢厂验质入库",
@@ -356,7 +435,7 @@ function buildTrace(item: OrderItem) {
     },
   ]
 
-  return { nodes, nodeMap, suppliers, recycler, processor, mill, edges, stages, multi }
+  return { nodes, nodeMap, suppliers, recycler, processors, mill, edges, stages, multi }
 }
 
 /* ------------------------------------------------------------------ */
@@ -367,7 +446,7 @@ type ViewMode = "flow" | "graph"
 
 export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => void }) {
   const trace = useMemo(() => buildTrace(item), [item])
-  const { nodes, nodeMap, suppliers, recycler, processor, mill, edges, stages, multi } = trace
+  const { nodes, nodeMap, suppliers, recycler, processors, mill, edges, stages, multi } = trace
   const [view, setView] = useState<ViewMode>("flow")
   const [openStage, setOpenStage] = useState<string | null>(stages[0]?.key ?? null)
   const [selected, setSelected] = useState<string>(mill.id)
@@ -383,7 +462,7 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
 
       <PageHeader
         title="订单溯源"
-        desc="追溯货物从多家供应商供货、回收商委托加工到加工基地直发钢厂入库的全过程，每个节点均对应单号与凭证"
+        desc="追溯货物从多家供应商（企业 / 自然人）供货、回收商分别委托对应加工基地改制到直发钢厂入库的全过程，每个节点均对应单号与凭证"
       />
 
       {/* 订单摘要 */}
@@ -395,7 +474,8 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
           <Field label="品类" value={item.category} />
           <Field label="入库数量" value={item.qty} mono />
           <Field label="订单金额" value={item.amount ?? "协议按周期结算"} mono />
-          <Field label="供应商来源" value={`${suppliers.length} 家`} mono />
+          <Field label="供应商来源" value={`${suppliers.length} 家（${supplierTypeSummary(suppliers)}）`} mono />
+          <Field label="加工基地" value={`${processors.length} 家`} mono />
           <StatusPill tone="green">{item.status}</StatusPill>
         </div>
       </section>
@@ -406,12 +486,13 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
           <div>
             <h3 className="text-sm font-semibold text-foreground">溯源链路</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {multi ? `${suppliers.length} 家供应商` : "供应商"} → 回收商 → 加工基地 → 钢厂 · 加工完成后由加工基地直发钢厂
+              {multi ? `${suppliers.length} 家供应商` : "供应商"} → 回收商 →{" "}
+              {multi ? `${processors.length} 家对应加工基地` : "加工基地"} → 钢厂 · 加工完成后由各加工基地直发钢厂
             </p>
           </div>
           <div className="inline-flex rounded-md border border-border bg-background p-0.5 text-xs">
             <ViewTab active={view === "flow"} onClick={() => setView("flow")} icon={GitBranch} label="链路视图" />
-            <ViewTab active={view === "graph"} onClick={() => setView("graph")} icon={Waypoints} label="知识图谱" />
+            <ViewTab active={view === "graph"} onClick={() => setView("graph")} icon={Waypoints} label="网络图谱" />
           </div>
         </div>
 
@@ -419,7 +500,7 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
           <FlowView
             suppliers={suppliers}
             recycler={recycler}
-            processor={processor}
+            processors={processors}
             mill={mill}
             edges={edges}
             selected={selected}
@@ -436,7 +517,7 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
         <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
           <Kpi label={multi ? `供应商供货（${suppliers.length} 家）` : "供应商供货"} value={recycler.qty} hint="扣杂后合计" />
           <Kpi label="回收商汇总入库" value={recycler.qty} hint="委托加工" />
-          <Kpi label="加工基地产出" value={processor.qty} hint="加工损耗 8.0%" />
+          <Kpi label={multi ? `加工基地产出（${processors.length} 家）` : "加工基地产出"} value={mill.qty} hint="加工损耗 8.0% · 合计" />
           <Kpi label="钢厂入库" value={mill.qty} hint="无扣杂" accent />
         </div>
       </section>
@@ -444,7 +525,8 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
       {/* 分段明细 */}
       <section className="space-y-3">
         {stages.map((st, idx) => {
-          const to = nodeMap[st.toId]
+          const toNodes = st.toIds.map((id) => nodeMap[id])
+          const to = toNodes[0]
           const ToIcon = nodeStyle[to.kind].icon
           const open = openStage === st.key
           const fromNodes = st.fromIds.map((id) => nodeMap[id])
@@ -466,12 +548,12 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
                 <div className="hidden items-center gap-2 text-xs text-muted-foreground md:flex">
                   <span className={cn("flex items-center gap-1", nodeStyle[fromNodes[0].kind].color)}>
                     <FromIcon className="size-3.5" />
-                    {fromNodes.length > 1 ? `${fromNodes.length} 家供应商` : fromNodes[0].name}
+                    {groupLabel(fromNodes)}
                   </span>
                   <span>→</span>
                   <span className={cn("flex items-center gap-1", nodeStyle[to.kind].color)}>
                     <ToIcon className="size-3.5" />
-                    {to.name}
+                    {groupLabel(toNodes)}
                   </span>
                 </div>
                 <div className="hidden shrink-0 text-right md:block">
@@ -501,8 +583,11 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
                                 批次 {bi + 1} · {n.name}
                               </span>
                               <span className="text-xs text-muted-foreground">{n.region}</span>
+                              {b.caption && (
+                                <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{b.caption}</span>
+                              )}
                               <span className="ml-auto rounded-full border border-border bg-background px-2 py-0.5 text-[11px] tabular-nums text-foreground">
-                                确认 {n.qty}
+                                {n.kind === "processor" ? "产出" : "确认"} {n.qty}
                               </span>
                             </div>
                             <Timeline events={b.events} />
@@ -527,10 +612,22 @@ export function OrderTrace({ item, onBack }: { item: OrderItem; onBack: () => vo
 /* 链路视图（流程图）                                                    */
 /* ------------------------------------------------------------------ */
 
+function supplierTypeSummary(suppliers: TraceNode[]) {
+  const company = suppliers.filter((s) => s.role.endsWith("企业")).length
+  const person = suppliers.length - company
+  return [company && `企业 ${company}`, person && `自然人 ${person}`].filter(Boolean).join(" · ")
+}
+
+function groupLabel(nodes: TraceNode[]) {
+  if (nodes.length === 1) return nodes[0].name
+  const unit = nodes[0].kind === "supplier" ? "家供应商" : nodes[0].kind === "processor" ? "家加工基地" : "个节点"
+  return `${nodes.length} ${unit}`
+}
+
 function FlowView({
   suppliers,
   recycler,
-  processor,
+  processors,
   mill,
   edges,
   selected,
@@ -538,27 +635,46 @@ function FlowView({
 }: {
   suppliers: TraceNode[]
   recycler: TraceNode
-  processor: TraceNode
+  processors: TraceNode[]
   mill: TraceNode
   edges: TraceEdge[]
   selected: string
   onSelect: (id: string) => void
 }) {
-  const e2 = edges.find((e) => e.from === recycler.id)!
-  const e3 = edges.find((e) => e.from === processor.id)!
+  const many = processors.length > 1
+  const multiCols = cn("grid gap-2 xl:grid-cols-1", many && "sm:grid-cols-3")
+  const toMill = edges.filter((e) => e.to === mill.id)
+  const shipped = toMill.reduce((acc, e) => acc + parseQty(e.qty), 0)
+  const supplierNote = suppliers.length > 1 ? `${suppliers.length} 批汇总 · 扣杂 1.0%` : "扣杂 1.0%"
+  const processNote = many ? `按来源分别委托 ${processors.length} 家基地` : "委托加工"
+  const shipNote = many ? `${processors.length} 家基地分别直发 · 损耗 8%` : "直发钢厂 · 损耗 8%"
+  const compact = many
+
   return (
-    <div className="mt-5 flex flex-col gap-3 xl:grid xl:grid-cols-[minmax(0,1.15fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center">
-      {/* 供应商列（可多个）：窄屏横排，宽屏纵排 */}
+    <div className="mt-5 flex flex-col gap-3 xl:grid xl:grid-cols-[minmax(0,1.1fr)_auto_minmax(0,0.9fr)_auto_minmax(0,1.1fr)_auto_minmax(0,0.9fr)] xl:items-center">
+      {/* 供应商列（企业 / 自然人，可多个）：窄屏横排，宽屏纵排 */}
       <div className={cn("grid gap-2 xl:grid-cols-1", suppliers.length > 1 && "sm:grid-cols-3")}>
         {suppliers.map((s) => (
-          <NodeCard key={s.id} node={s} compact selected={selected === s.id} onClick={() => onSelect(s.id)} />
+          <NodeCard key={s.id} node={s} compact={suppliers.length > 1} selected={selected === s.id} onClick={() => onSelect(s.id)} />
         ))}
       </div>
-      <Connector qty={recycler.qty} note={suppliers.length > 1 ? `${suppliers.length} 批汇总 · 扣杂 1.0%` : "扣杂 1.0%"} />
+      <Connector qty={recycler.qty} note={supplierNote} />
       <NodeCard node={recycler} selected={selected === recycler.id} onClick={() => onSelect(recycler.id)} />
-      <Connector qty={e2.qty} note={e2.note} />
-      <NodeCard node={processor} selected={selected === processor.id} onClick={() => onSelect(processor.id)} />
-      <Connector qty={e3.qty} note={e3.note} />
+      <Connector qty={recycler.qty} note={processNote} />
+      {/* 加工基地列：与供应商一一对应 */}
+      <div className={multiCols}>
+        {processors.map((pr, i) => (
+          <NodeCard
+            key={pr.id}
+            node={pr}
+            compact={compact}
+            tag={many ? `来源 ${suppliers[i]?.name ?? ""}` : undefined}
+            selected={selected === pr.id}
+            onClick={() => onSelect(pr.id)}
+          />
+        ))}
+      </div>
+      <Connector qty={tons(shipped)} note={shipNote} />
       <NodeCard node={mill} selected={selected === mill.id} onClick={() => onSelect(mill.id)} />
     </div>
   )
@@ -567,11 +683,13 @@ function FlowView({
 function NodeCard({
   node,
   compact,
+  tag,
   selected,
   onClick,
 }: {
   node: TraceNode
   compact?: boolean
+  tag?: string
   selected: boolean
   onClick: () => void
 }) {
@@ -600,6 +718,7 @@ function NodeCard({
           {node.qty}
         </span>
       </div>
+      {tag && <p className="mt-1.5 truncate text-[10px] text-muted-foreground">{tag}</p>}
       {!compact && (
         <>
           <p className="mt-2.5 flex items-center gap-1 text-xs text-muted-foreground">
@@ -641,7 +760,7 @@ function Connector({ qty, note }: { qty: string; note?: string }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 知识图谱视图（SVG 网络图）                                            */
+/* 网络图谱视图（SVG 网络图）                                            */
 /* ------------------------------------------------------------------ */
 
 interface GraphPoint {
@@ -663,35 +782,46 @@ function GraphView({
   onSelect: (id: string) => void
 }) {
   const W = 1040
-  const H = 500
   const suppliers = nodes.filter((n) => n.kind === "supplier")
+  const processors = nodes.filter((n) => n.kind === "processor")
+  const many = suppliers.length > 1
+  const H = many ? 660 : 500
 
-  // 主体节点布局：供应商左列纵向分布，其余三方横向排列
+  // 主体节点布局：供应商左列、加工基地右中列纵向分布，回收商与钢厂居中横向排列
   const pos: Record<string, GraphPoint> = {}
-  const gap = (H - 40) / (suppliers.length + 1)
+  const gapS = (H - 40) / (suppliers.length + 1)
   suppliers.forEach((s, i) => {
-    pos[s.id] = { x: 150, y: 20 + gap * (i + 1) }
+    pos[s.id] = { x: 150, y: 20 + gapS * (i + 1) }
   })
-  pos.rec = { x: 420, y: H / 2 }
-  pos.proc = { x: 680, y: H / 2 }
-  pos.mill = { x: 920, y: H / 2 }
+  pos.rec = { x: 400, y: H / 2 }
+  const gapP = (H - 40) / (processors.length + 1)
+  processors.forEach((pr, i) => {
+    pos[pr.id] = { x: 660, y: 20 + gapP * (i + 1) }
+  })
+  pos.mill = { x: 930, y: H / 2 }
 
   // 单据节点：挂在对应主体节点周围
   const docNodes = nodes.flatMap((n) => {
     const p = pos[n.id]
     const isSupplier = n.kind === "supplier"
+    const isProcessor = n.kind === "processor"
     return n.docs.map((d, i) => {
-      // 供应商单据：向左散开；其余主体：向下扇形排列
-      const angle = isSupplier ? Math.PI + (i - 1) * 0.42 : Math.PI / 2 + (i - 1) * 0.7
-      const r = isSupplier ? 100 : 115
-      return {
-        id: `${n.id}-doc-${i}`,
-        owner: n.id,
-        label: d.label,
-        no: d.no,
-        x: p.x + Math.cos(angle) * r,
-        y: p.y + Math.sin(angle) * r,
+      // 供应商单据向左散开；加工基地单据（多家时）向上/下紧凑排列；其余主体向下扇形排列
+      const count = n.docs.length
+      const centered = i - (count - 1) / 2
+      let x: number
+      let y: number
+      if (isProcessor && many) {
+        // 2×2：上两张、下两张，避免与相邻加工基地重叠
+        x = p.x + (i % 2 === 0 ? -42 : 42)
+        y = p.y + (i < 2 ? -60 : 60)
+      } else {
+        const angle = isSupplier ? Math.PI + centered * 0.42 : Math.PI / 2 + centered * 0.6
+        const r = isSupplier ? 100 : 115
+        x = p.x + Math.cos(angle) * r
+        y = p.y + Math.sin(angle) * r
       }
+      return { id: `${n.id}-doc-${i}`, owner: n.id, label: d.label, no: d.no, x, y }
     })
   })
 
@@ -703,7 +833,7 @@ function GraphView({
 
   return (
     <div className="mt-5 overflow-hidden rounded-lg border border-border bg-gradient-to-b from-background to-muted/30">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="订单溯源知识图谱">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="订单溯源网络图谱">
         <defs>
           <marker id="trace-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
@@ -739,13 +869,16 @@ function GraphView({
           const active = e.from === selected || e.to === selected
           const mx = (a.x + b.x) / 2
           const my = (a.y + b.y) / 2
-          // 供应商 → 回收商 用二次曲线汇聚
-          const curved = nodeMap[e.from].kind === "supplier"
+          // 不同纵坐标（汇聚 / 分发）用二次曲线，水平直连用直线
+          const curved = Math.abs(a.y - b.y) > 1
+          const fanOut = nodeMap[e.from].kind === "recycler"
           const d = curved
-            ? `M ${a.x + 40} ${a.y} Q ${mx} ${a.y} ${b.x - 44} ${b.y}`
+            ? fanOut
+              ? `M ${a.x + 44} ${a.y} Q ${mx} ${b.y} ${b.x - 44} ${b.y}`
+              : `M ${a.x + 40} ${a.y} Q ${mx} ${a.y} ${b.x - 44} ${b.y}`
             : `M ${a.x + 44} ${a.y} L ${b.x - 44} ${b.y}`
-          const labelX = curved ? (a.x + b.x) / 2 - 10 : mx
-          const labelY = curved ? (a.y + b.y) / 2 - 8 : my - 10
+          const labelX = curved ? mx - 14 : mx
+          const labelY = curved ? my - 8 : my - 10
           return (
             <g key={`${e.from}-${e.to}`} opacity={active || selected === "" ? 1 : 0.4}>
               <path
